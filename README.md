@@ -72,6 +72,8 @@ java -jar target/redis-0.0.1-SNAPSHOT.jar
 - Use the postman collection located in /src/main/resources directory to test the application.
 
 ### Reference Documentation
+
+referene repo:  http://www.rajith.me/2020/02/using-redis-with-spring-boot.html
 For further reference, please consider the following sections:
 
 (Redis-Client) https://lettuce.io/# redis-lettuce-spring-boot-enhance
