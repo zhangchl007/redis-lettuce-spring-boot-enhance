@@ -12,7 +12,7 @@ on:
     paths-ignore:
       - 'README.md'
       - '.github/**'
-      - 'helm/**'
+      - 'deploy/**'
       - 'tests/**'  
   pull_request: 
     branches:
