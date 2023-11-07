@@ -23,10 +23,10 @@ env:
   REGISTRY_NAME: myacr0218
   CLUSTER_NAME: aks-staging
   CLUSTER_RESOURCE_GROUP: rg-staging-eastus
-  NAMESPACE: webapp-dev
+  NAMESPACE: redisdemo-dev
   CONTAINER_REGISTRY_URL: myacr0218.azurecr.io
   CONTAINER_REGISTRY_SECRET: secret-acr
-  APP_NAME: webappdemo
+  APP_NAME: redisdemo
 
 jobs:
   provision:
@@ -150,7 +150,7 @@ jobs:
     name: Deloy to DEV
     environment:
       name: DEV
-      url: 'http://demo1.apps.cloudinfraz.com/hello'
+      url: 'http://redisdemo.apps.cloudinfraz.com/api/v1/otp'
 
     steps:
       # LOAD HELM CONFIG FOR DEPLOY
