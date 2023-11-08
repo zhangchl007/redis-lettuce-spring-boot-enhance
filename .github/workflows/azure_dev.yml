@@ -2,7 +2,7 @@ name: DEV Pipeline
 
 on:
   workflow_run:
-    workflows: ["CodeQL"]
+    workflows: ["CodeQLAdvancedAnalysis"]
     branches: [dev]
     types:
     - completed
