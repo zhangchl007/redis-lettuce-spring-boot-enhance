@@ -6,14 +6,14 @@ on:
     branches: [dev]
     types:
     - completed
-  push:
-    branches:
-      - dev
-    paths-ignore:
-      - 'README.md'
-      - '.github/**'
-      - 'deploy/**'
-      - 'tests/**'  
+#push:
+#  branches:
+#    - dev
+#  paths-ignore:
+#    - 'README.md'
+#    - '.github/**'
+#    - 'deploy/**'
+#    - 'tests/**'  
   workflow_dispatch:
 
 env:
@@ -141,6 +141,17 @@ jobs:
         docker tag ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }} ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:stg
         docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:stg
         
+    - name: setup Notation CLI
+    # You may pin to the exact commit or the version.
+    # uses: notaryproject/notation-action@629fbef7d1d82d69ef1f4fb78e7e0d91702e3366
+      uses: notaryproject/notation-action@v1.0.0
+      with:
+        # version of official Notation CLI [release](https://github.com/notaryproject/notation/releases). This field is ignored if 'url' is present.
+        version: "1.0.0"
+    
+    
+
+          
   deploy_dev:
     runs-on: ubuntu-latest
     needs: push
