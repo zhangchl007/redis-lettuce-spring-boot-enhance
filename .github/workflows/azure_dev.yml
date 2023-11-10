@@ -177,8 +177,7 @@ jobs:
         target_artifact_reference:  ${{ env.target_artifact_reference }}
         signature_format: cose
         plugin_config: |-
-          ca_certs=.github/cert-bundle/Cloudinfraz.pem
-          self_signed=false
+          self_signed=true
     
           
   deploy_dev:
