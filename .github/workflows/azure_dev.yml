@@ -1,19 +1,19 @@
 name: DEV Pipeline
 
 on:
-# workflow_run:
-#   workflows: ["CodeQLAdvancedAnalysis"]
-#   branches: [dev]
-#   types:
-#   - completed
-  push:
-    branches:
-      - dev
-    paths-ignore:
-      - 'README.md'
-      - 'deploy/**'
-      - 'tests/**'  
-  workflow_dispatch:
+ workflow_run:
+   workflows: ["CodeQLAdvancedAnalysis"]
+   branches: [dev]
+   types:
+   - completed
+#push:
+#  branches:
+#    - dev
+#  paths-ignore:
+#    - 'README.md'
+#    - 'deploy/**'
+#    - 'tests/**'  
+#workflow_dispatch:
 
 env:
   REGISTRY_NAME: myacr0218
@@ -139,6 +139,11 @@ jobs:
         docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
         docker tag ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }} ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:stg
         docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:stg
+        
+    - name: Connect to Azure 
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
         
     - name: setup Notation CLI
     # You may pin to the exact commit or the version.
