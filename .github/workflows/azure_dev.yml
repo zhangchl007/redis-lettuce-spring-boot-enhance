@@ -1,11 +1,11 @@
 name: DEV Pipeline
 
 on:
- workflow_run:
-   workflows: ["CodeQLAdvancedAnalysis"]
-   branches: [dev]
-   types:
-   - completed
+#workflow_run:
+#  workflows: ["CodeQLAdvancedAnalysis"]
+#  branches: [dev]
+#  types:
+#  - completed
 #push:
 #  branches:
 #    - dev
@@ -14,6 +14,12 @@ on:
 #    - 'deploy/**'
 #    - 'tests/**'  
 #workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    types: [closed, labeled]
+  workflow_dispatch:
+
 
 env:
   REGISTRY_NAME: myacr0218
@@ -23,10 +29,11 @@ env:
   CONTAINER_REGISTRY_URL: myacr0218.azurecr.io
   CONTAINER_REGISTRY_SECRET: secret-acr
   APP_NAME: redisdemo
-  IMAGE_DIGEST: ''
 
 jobs:
+
   provision:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     name: Provisioning Infra & Configuration
 
@@ -135,12 +142,15 @@ jobs:
     
       # DOCKER BUILD & PUSH TO AZURE CONTAINER REGISTRY
     - name: Build image & Push to Azure Container Registry
+      uses: docker/build-push-action@v5
+      id: prepare
+      with:
+        push: true
+        tags: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
+
+    - name: Retrieve digest
       run: |
-        docker build . -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
-        docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
-        docker tag ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }} ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:stg
-        docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:stg
-        export ${{ env.IMAGE_DIGEST }}=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }})
+        echo "target_artifact_reference=${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}@${{ steps.prepare.outputs.digest }}" >> "$GITHUB_ENV"
         
     - name: Connect to Azure 
       uses: azure/login@v1
@@ -162,7 +172,7 @@ jobs:
         plugin_url: https://github.com/Azure/notation-azure-kv/releases/download/v1.0.1/notation-azure-kv_1.0.1_linux_amd64.tar.gz
         plugin_checksum: f8a75d9234db90069d9eb5660e5374820edf36d710bd063f4ef81e7063d3810b
         key_id: https://mykeyvaultzhangchl007.vault.azure.net/keys/Cloudinfraz/bd2bdc8bb8534a3d93bd3e1f8524785a
-        target_artifact_reference:  ${{ env.IMAGE_DIGEST }}
+        target_artifact_reference:  ${{ env.target_artifact_reference }}
         signature_format: cose
         plugin_config: |-
           ca_certs=.github/cert-bundle/Cloudinfraz.pem
