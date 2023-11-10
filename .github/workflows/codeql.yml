@@ -27,9 +27,7 @@ on:
     branches:
       - dev
     paths-ignore:
-      - 'README.md'
-      - '.github/**'
-      - 'helm/**'
+      - '**/helm/**'
       - 'tests/**'
   #schedule:
   # - cron: '17 11 * * 6'
