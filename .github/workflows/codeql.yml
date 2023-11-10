@@ -27,7 +27,7 @@ on:
     branches:
       - dev
     paths-ignore:
-      - 'helm/**'
+      - '**/helm/**'
       - 'tests/**'
   #schedule:
   # - cron: '17 11 * * 6'

@@ -1,19 +1,18 @@
 name: DEV Pipeline
 
 on:
-  workflow_run:
-    workflows: ["CodeQLAdvancedAnalysis"]
-    branches: [dev]
-    types:
-    - completed
-#push:
-#  branches:
-#    - dev
-#  paths-ignore:
-#    - 'README.md'
-#    - '.github/**'
-#    - 'deploy/**'
-#    - 'tests/**'  
+# workflow_run:
+#   workflows: ["CodeQLAdvancedAnalysis"]
+#   branches: [dev]
+#   types:
+#   - completed
+  push:
+    branches:
+      - dev
+    paths-ignore:
+      - 'README.md'
+      - 'deploy/**'
+      - 'tests/**'  
   workflow_dispatch:
 
 env:
