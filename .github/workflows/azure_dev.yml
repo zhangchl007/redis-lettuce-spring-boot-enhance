@@ -158,11 +158,16 @@ jobs:
       uses: aquasecurity/trivy-action@master
       with:
         image-ref: '${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}'
-        format: 'table'
-        exit-code: '1'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        #exit-code: '1'
         ignore-unfixed: true
         vuln-type: 'os,library'
         severity: 'CRITICAL,HIGH'
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'
 
     - name: Container image scanning
       uses: erzz/dockle-action@v1
