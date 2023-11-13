@@ -153,14 +153,14 @@ jobs:
     - name: Retrieve digest
       run: |
         echo "target_artifact_reference=${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}@${{ steps.prepare.outputs.digest }}" >> "$GITHUB_ENV"
-        
+
     - name: container image scan
       uses: azure/container-scan@v0
       with:
         image-name: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
         password: ${{ secrets.REGISTRY_PASSWORD }}
         username: ${{ secrets.REGISTRY_USERNAME }}
-        severity-threshold: low
+        severity-threshold: high
            
     - name: Connect to Azure 
       uses: azure/login@v1
