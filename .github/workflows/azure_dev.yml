@@ -288,13 +288,10 @@ jobs:
         name: Product Test Reports
         path: '${{ github.workspace }}/tests/robot/reports/*'
 
-    - name: List files in the working directory
-      run: |
-        echo 'redisdemo.apps.cloudinfraz.com 
-    - name: ZAP Scan
+    - name: OWASP ZAP Scan
       uses: zaproxy/action-baseline@v0.6.1
       with:
         docker_name: 'owasp/zap2docker-stable'
-        target: 'http://testphp.vulnweb.com/'
+        target: 'http://zhangchl007.github.io/'
         rules_file_name: '.zap/rules.tsv'
         cmd_options: '-a'
