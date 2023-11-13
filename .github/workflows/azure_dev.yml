@@ -115,7 +115,7 @@ jobs:
 
   build_image_scanning:
     runs-on: ubuntu-latest
-    name: Build Image
+    name: Build Image and vulnerability scanning
     needs: Code_CI
 
     steps:
@@ -162,8 +162,18 @@ jobs:
         report_file="report.json"
         vuln_count=$(jq '.Results | length' "$report_file")
         echo "vuln_count=$vuln_count" >> $GITHUB_OUTPUT
+    # CONNECT TO AZURE CONTAINER REGISTRY
+    - name: Connect to Azure Container Registry
+      id: login
+      uses: azure/docker-login@v1
+      with:
+        login-server: ${{ env.REGISTRY_NAME }}.azurecr.io
+        username: ${{ secrets.REGISTRY_USERNAME }} 
+        password: ${{ secrets.REGISTRY_PASSWORD }}
+
+    #Generate vulnerability scanner Report and patch image
     - name: Copa Action
-      if: steps.vuln_count.outputs.vuln_count != '0'
+      if: steps.vuln_count.outputs.vuln_count != '0' && steps.login.conclusion == 'success'
       id: copa
       uses: project-copacetic/copa-action@v1.0.0
       with:
@@ -204,15 +214,6 @@ jobs:
       uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file: dockle-results.sarif
-
-    # CONNECT TO AZURE CONTAINER REGISTRY
-    - name: Connect to Azure Container Registry
-      id: login
-      uses: azure/docker-login@v1
-      with:
-        login-server: ${{ env.REGISTRY_NAME }}.azurecr.io
-        username: ${{ secrets.REGISTRY_USERNAME }} 
-        password: ${{ secrets.REGISTRY_PASSWORD }}
 
     # PUSH TO AZURE CONTAINER REGISTRY
     - name: Docker Push Patched Image
