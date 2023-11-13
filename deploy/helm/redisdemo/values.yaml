@@ -39,8 +39,11 @@ securityContext: {}
   # runAsNonRoot: true
   # runAsUser: 1000
 
+#service:
+#  type: ClusterIP
+#  port: 80
 service:
-  type: ClusterIP
+  type: LoadBalancer
   port: 80
 
 ingress:

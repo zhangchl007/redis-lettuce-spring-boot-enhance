@@ -179,10 +179,6 @@ jobs:
         exit-code: 1
         dockle-version: 0.4.11
         accept-extensions: pem
-
-    - name: List files in the working directory
-      run: |
-        ls -lR
         
     - name: Upload SARIF file
       uses: github/codeql-action/upload-sarif@v2
@@ -291,3 +287,14 @@ jobs:
       with:
         name: Product Test Reports
         path: '${{ github.workspace }}/tests/robot/reports/*'
+
+    - name: List files in the working directory
+      run: |
+        echo 'redisdemo.apps.cloudinfraz.com 
+    - name: ZAP Scan
+      uses: zaproxy/action-baseline@v0.6.1
+      with:
+        docker_name: 'owasp/zap2docker-stable'
+        target: 'http://testphp.vulnweb.com/'
+        rules_file_name: '.zap/rules.tsv'
+        cmd_options: '-a'
