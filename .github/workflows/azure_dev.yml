@@ -148,7 +148,7 @@ jobs:
         ignore-unfixed: true
         severity: CRITICAL
         vuln-type: 'os'
-        image-ref: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
+        image-ref: localhost/${{ env.APP_NAME }}:${{ github.sha }}
     - name: Check Vuln Count
       id: vuln_count
       run: |
@@ -163,20 +163,28 @@ jobs:
         login-server: ${{ env.REGISTRY_NAME }}.azurecr.io
         username: ${{ secrets.REGISTRY_USERNAME }} 
         password: ${{ secrets.REGISTRY_PASSWORD }}
-
     #Generate vulnerability scanner Report and patch image
     - name: Copa Action
       if: steps.vuln_count.outputs.vuln_count != '0' && steps.login.conclusion == 'success'
       id: copa
       uses: project-copacetic/copa-action@v1.0.0
       with:
-        image: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
+        image: localhost/${{ env.APP_NAME }}:${{ github.sha }}
         image-report: 'report.json'
         patched-tag: 'patched'
         buildkit-version: 'v0.11.6'
         # optional, default is latest
         #copa-version: '0.3.0'
-
+    # PUSH TO AZURE CONTAINER REGISTRY
+    - name: Docker Push Patched Image
+      id: prepare
+      if: steps.login.conclusion == 'success'
+      run: |
+        docker tag ${{ steps.copa.outputs.patched-image }} ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
+        docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
+    - name: Retrieve digest
+      run: |
+        echo "target_artifact_reference=${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}@${{ steps.prepare.outputs.digest }}" >> "$GITHUB_ENV"
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
       with:
@@ -207,16 +215,6 @@ jobs:
       uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file: dockle-results.sarif
-
-    # PUSH TO AZURE CONTAINER REGISTRY
-    - name: Docker Push Patched Image
-      id: prepare
-      if: steps.login.conclusion == 'success'
-      run: |
-        docker push ${{ steps.copa.outputs.patched-image }}
-    - name: Retrieve digest
-      run: |
-        echo "target_artifact_reference=${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}@${{ steps.prepare.outputs.digest }}" >> "$GITHUB_ENV"
        
     - name: Connect to Azure 
       uses: azure/login@v1
