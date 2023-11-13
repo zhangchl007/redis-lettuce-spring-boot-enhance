@@ -131,17 +131,10 @@ jobs:
         name: artifact
         path: '${{ github.workspace }}/target'
       # DOCKER BUILD
-    - name: Build image & Push to Azure Container Registry
-      uses: docker/build-push-action@v5
-      id: prepare
-      with:
-        context: .
-        file: ./Dockerfile
-        push: false
-        tags: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}   
-    - name: Retrieve digest
+    - name: Build image
       run: |
-        echo "target_artifact_reference=${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}@${{ steps.prepare.outputs.digest }}" >> "$GITHUB_ENV"
+        docker build . -t localhost/${{ env.APP_NAME }}:${{ github.sha }}
+        docker tag localhost/${{ env.APP_NAME }}:${{ github.sha }} ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@master
       #Generate Trivy vulnerability scanner Report
@@ -182,7 +175,7 @@ jobs:
         patched-tag: 'patched'
         buildkit-version: 'v0.11.6'
         # optional, default is latest
-        copa-version: '0.3.0'
+        #copa-version: '0.3.0'
 
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
@@ -217,9 +210,13 @@ jobs:
 
     # PUSH TO AZURE CONTAINER REGISTRY
     - name: Docker Push Patched Image
+      id: prepare
       if: steps.login.conclusion == 'success'
       run: |
         docker push ${{ steps.copa.outputs.patched-image }}
+    - name: Retrieve digest
+      run: |
+        echo "target_artifact_reference=${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}@${{ steps.prepare.outputs.digest }}" >> "$GITHUB_ENV"
        
     - name: Connect to Azure 
       uses: azure/login@v1
@@ -245,7 +242,6 @@ jobs:
         signature_format: cose
         plugin_config: |-
           self_signed=true
-    
           
   deploy_dev:
     runs-on: ubuntu-latest
