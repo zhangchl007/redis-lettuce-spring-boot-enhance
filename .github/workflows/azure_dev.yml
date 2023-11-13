@@ -166,7 +166,7 @@ jobs:
     - name: Check Vuln Count
       id: vuln_count
       run: |
-        report_file="patch.json"
+        report_file="report.json"
         vuln_count=$(jq '.Results | length' "$report_file")
         echo "vuln_count=$vuln_count" >> $GITHUB_OUTPUT
 
@@ -187,7 +187,7 @@ jobs:
         sudo nohup ./buildkitd &
         popd
         sleep 5
-        sudo ./copa patch -i${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:dev -r patch.json -t patched
+        sudo ./copa patch -i${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:dev -r report.json -t patched
 
      # PUSH TO AZURE CONTAINER REGISTRY
     - name: Docker Push Patched Image
