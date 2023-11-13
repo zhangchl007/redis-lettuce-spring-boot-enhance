@@ -11,9 +11,9 @@ updates:
     schedule:
       interval: "daily"
       # Disable all pull requests for Docker dependencies
+      
     open-pull-requests-limit: 0
-
-  # Configuration for npm
+  # Configuration for maven
   - package-ecosystem: "maven"
     directory: "/"
     schedule:
