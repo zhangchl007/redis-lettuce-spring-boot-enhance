@@ -169,17 +169,26 @@ jobs:
         report_file="report.json"
         vuln_count=$(jq '.Results | length' "$report_file")
         echo "vuln_count=$vuln_count" >> $GITHUB_OUTPUT
-    - name: Copa Action
+
+    - name: Patch with Copacetic
       if: steps.vuln_count.outputs.vuln_count != '0'
       id: copa
-      uses: project-copacetic/copa-action@v1.0.0
-      with:
-        image: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:dev
-        image-report: 'report.json'
-        patched-tag: 'patched'
-        buildkit-version: 'v0.11.6'
-        # optional, default is latest
-        #copa-version: '0.3.0'
+      run: |
+        function download() {
+          DOWNLOAD_URL=$1
+          DOWNLOAD_FILE=$2
+          curl -L -o $DOWNLOAD_FILE $DOWNLOAD_URL
+          tar -xzf $DOWNLOAD_FILE
+          rm $DOWNLOAD_FILE
+        }
+        download https://github.com/project-copacetic/copacetic/releases/download/v0.2.0/copa_0.2.0_linux_amd64.tar.gz copa_0.2.0_linux_amd64.tar.gz
+        download https://github.com/moby/buildkit/releases/download/v0.11.6/buildkit-v0.11.6.linux-amd64.tar.gz buildkit-v0.11.6.linux-amd64.tar.gz
+        pushd ./bin
+        sudo nohup ./buildkitd &
+        popd
+        sleep 5
+        sudo ./copa patch -i${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:dev -r patch.json -t patched
+
      # PUSH TO AZURE CONTAINER REGISTRY
     - name: Docker Push Patched Image
       id: prepare
