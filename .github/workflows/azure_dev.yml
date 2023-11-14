@@ -189,7 +189,7 @@ jobs:
         sudo nohup ./buildkitd &
         popd
         sleep 5
-        docker image ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:dev
+        docker image ls
         sudo ./copa patch -i ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:dev -r patch.json -t dev-1 -o patched-image
 
 #   - name: Copa Action
