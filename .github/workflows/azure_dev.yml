@@ -190,7 +190,7 @@ jobs:
         popd
         sleep 5
         docker image ls
-        sudo ./copa patch -i ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:dev -r patch.json -t dev-1 -o patched-image
+        sudo ./copa patch -i ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:dev -r patch.json -t dev-1 
 
 #   - name: Copa Action
 #     if: steps.vuln_count.outputs.vuln_count != '0'
