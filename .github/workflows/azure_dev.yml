@@ -171,6 +171,9 @@ jobs:
         report_file="report.json"
         vuln_count=$(jq '.Results | length' "$report_file")
         echo "vuln_count=$vuln_count" >> $GITHUB_OUTPUT
+    - name: docker pull image
+      run: |
+          docker pull ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:dev
     - name: Copa Action
       if: steps.vuln_count.outputs.vuln_count != '0'
       id: copa
