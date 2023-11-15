@@ -192,7 +192,6 @@ jobs:
         sudo nohup ./buildkitd &
         popd
         sleep 5
-        docker login ${{ env.REGISTRY_NAME }}.azurecr.io -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }}
         docker image ls
         sudo ./copa patch -i ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:dev -r report.json -t dev-1 
 
