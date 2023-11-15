@@ -29,6 +29,7 @@ env:
   CONTAINER_REGISTRY_URL: myacr0218.azurecr.io
   CONTAINER_REGISTRY_SECRET: secret-acr
   APP_NAME: redisdemo
+  IMAGE_TAG: dev
 
 jobs:
 
@@ -141,19 +142,14 @@ jobs:
       run: |
         az acr login --name ${{ env.REGISTRY_NAME }}.azurecr.io
 
-#    uses: azure/docker-login@v1
-#    with:
-#      login-server: ${{ env.REGISTRY_NAME }}.azurecr.io
-#      username: ${{ secrets.REGISTRY_USERNAME }} 
-#      password: ${{ secrets.REGISTRY_PASSWORD }}
-      # DOCKER BUILD
+    # BUILD IMAGE & PUSH TO AZURE CONTAINER REGISTRY
     - name: Build image & Push to Azure Container Registry
       uses: docker/build-push-action@v5
       with:
         context: .
         file: ./Dockerfile
         push: true
-        tags: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:dev
+        tags: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@master
       #Generate Trivy vulnerability scanner Report
@@ -173,8 +169,7 @@ jobs:
       run: |
         report_file="report.json"
         vuln_count=$(jq '.Results | length' "$report_file")
-        echo "vuln_count=$vuln_count" >> $GITHUB_OUTPUT
-
+        echo "vuln_count=$vuln_count" >> $GITHUB_OUTPUT 
     - name: Patch with Copacetic
       if: steps.vuln_count.outputs.vuln_count != '0'
       id: copa
@@ -193,7 +188,7 @@ jobs:
         popd
         sleep 5
         sudo docker login ${{ env.REGISTRY_NAME }}.azurecr.io -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }}
-        sudo ./copa patch -i ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:dev -r report.json -t dev-1 
+        sudo ./copa patch -i ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }} -r report.json -t ${{ env.IMAGE_TAG }}-1  
 
 #   - name: Copa Action
 #     if: steps.vuln_count.outputs.vuln_count != '0'
@@ -205,14 +200,14 @@ jobs:
 #       patched-tag: dev-1
 #       buildkit-version: 'v0.11.6'
 #       # optional, default is latest
-#       copa-version: '0.3.0'
+#      # copa-version: '0.3.0'
 
      # PUSH TO AZURE CONTAINER REGISTRY
     - name: Docker Push Patched Image
       id: prepare
       if: steps.login.conclusion == 'success'
       run: |
-        docker tag ${{ steps.copa.outputs.patched-image }} ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
+        docker tag  ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}-1 ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
         docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
     - name: Get image digest
       run : |
