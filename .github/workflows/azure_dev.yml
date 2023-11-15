@@ -138,11 +138,14 @@ jobs:
      # CONNECT TO AZURE CONTAINER REGISTRY
     - name: Connect to Azure Container Registry
       id: login
-      uses: azure/docker-login@v1
-      with:
-        login-server: ${{ env.REGISTRY_NAME }}.azurecr.io
-        username: ${{ secrets.REGISTRY_USERNAME }} 
-        password: ${{ secrets.REGISTRY_PASSWORD }}
+      run: |
+        az acr login --name ${{ env.REGISTRY_NAME }}.azurecr.io
+
+#    uses: azure/docker-login@v1
+#    with:
+#      login-server: ${{ env.REGISTRY_NAME }}.azurecr.io
+#      username: ${{ secrets.REGISTRY_USERNAME }} 
+#      password: ${{ secrets.REGISTRY_PASSWORD }}
       # DOCKER BUILD
     - name: Build image & Push to Azure Container Registry
       uses: docker/build-push-action@v5
