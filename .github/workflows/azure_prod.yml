@@ -272,7 +272,7 @@ jobs:
     name: Deloy to prod
     environment:
       name: PROD
-      url: 'http://redisdemo.apps.cloudinfraz.com/api/v1/otp'
+      url: 'http://redisprod.apps.cloudinfraz.com/api/v1/otp'
 
     steps:
       # LOAD HELM CONFIG FOR DEPLOY
