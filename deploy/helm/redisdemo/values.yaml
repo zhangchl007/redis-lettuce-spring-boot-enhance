@@ -56,7 +56,8 @@ ingress:
     - host: redisdemo.apps.cloudinfraz.com
       paths:
         - path: /api/v1/otp
-          pathType: ImplementationSpecific
+        
+          
   tls: []
   #  - secretName: chart-example-tls
   #    hosts:
