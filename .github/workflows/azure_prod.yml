@@ -41,18 +41,18 @@ jobs:
     - name: Load Configuration Files
       uses: actions/checkout@v2
       with:
-        ref: prod
+        ref: main
 
   unittest:
     runs-on: ubuntu-latest
     name: Unit Test
 
     steps:
-    # CHECKOUT prod
+    # CHECKOUT main
     - name: Checkout Unit Test Files
       uses: actions/checkout@v2
       with:
-        ref: prod
+        ref: main
     
     # SET ENV JAVA
     - name: Set up Java version
@@ -79,7 +79,7 @@ jobs:
     - name: Checkout Code for Scanning
       uses: actions/checkout@v2
       with:
-        ref: prod
+        ref: main
 
   Code_CI:
     runs-on: ubuntu-latest
@@ -93,7 +93,7 @@ jobs:
     # CHECKOUT SOURCE CODE
     - uses: actions/checkout@v2
       with:
-        ref: prod
+        ref: main
 
     # SETING UP JAVA FOR BUILD
     - uses: actions/setup-java@v1
@@ -120,7 +120,7 @@ jobs:
     - name: Load Dockerfile
       uses: actions/checkout@v2
       with:
-        ref: prod
+        ref: main
     # DOWNLOAD ARTIFACT
     - name: Load Artifact
       uses: actions/download-artifact@v2
@@ -146,6 +146,7 @@ jobs:
         file: ./Dockerfile
         push: true
         tags: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@master
       #Generate Trivy vulnerability scanner Report
@@ -160,12 +161,14 @@ jobs:
         severity: CRITICAL
         vuln-type: 'os'
         image-ref: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:prod
+
     - name: Check Vuln Count
       id: vuln_count
       run: |
         report_file="report.json"
         vuln_count=$(jq '.Results | length' "$report_file")
         echo "vuln_count=$vuln_count" >> $GITHUB_OUTPUT 
+
     - name: Patch with Copacetic
       if: steps.vuln_count.outputs.vuln_count != '0'
       id: copa
@@ -211,6 +214,7 @@ jobs:
       id: prepare
       run : |
           echo "DIGEST=$(docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}| grep -oE 'sha256:[a-f0-9]{64}')" >> $GITHUB_OUTPUT
+    # RUN TRIVY VULNERABILITY SCANNER     
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
       with:
@@ -275,7 +279,7 @@ jobs:
       - name: Load Helm configuration files
         uses: actions/checkout@v2
         with:
-          ref: prod
+          ref: main
       
       # INSTALL HELM ON GITHUB HOST
       - name: Install Helm on GitHub host
@@ -324,7 +328,7 @@ jobs:
     - name: Checkout Source Code
       uses: actions/checkout@v2
       with:
-        ref: prod
+        ref: main
 
     # EXECUTE PRODUCT TEST WITH ROBOT FRAMEWORK ACTION
     - name: Robot Framework Action
