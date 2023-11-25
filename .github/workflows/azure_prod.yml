@@ -26,7 +26,7 @@ env:
   NAMESPACE: redisdemo-prod
   CONTAINER_REGISTRY_URL: myacr0218.azurecr.io
   CONTAINER_REGISTRY_SECRET: secret-acr
-  APP_NAME: redisdemo
+  APP_NAME: redisprod
   IMAGE_TAG: prod
 
 jobs:
@@ -316,7 +316,7 @@ jobs:
         run: |
           pwd
           helm upgrade --install --create-namespace --atomic --wait --namespace ${{ env.NAMESPACE }} ${{ env.APP_NAME }}  ./deploy/helm/redisdemo \
-          --set image.name=${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}  \
+          --set image.name=${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }} --set ingress.hosts={redisprod.apps.cloudinfraz.com} \
           --set imagePullSecrets[0].name=${{ env.CONTAINER_REGISTRY_SECRET }}
 
   integrate_test:
