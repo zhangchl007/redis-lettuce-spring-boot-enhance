@@ -267,7 +267,7 @@ jobs:
     name: Deloy to DEV
     environment:
       name: DEV
-      url: 'http://redisdemo.apps.cloudinfraz.com/api/v1/otp'
+      url: 'http://redisdev.apps.cloudinfraz.com/api/v1/otp'
 
     steps:
       # LOAD HELM CONFIG FOR DEPLOY
