@@ -71,7 +71,6 @@ jobs:
         name: UnitTest-Reports
         path: '${{ github.workspace }}/target/site/jacoco/*'
 
-
   codescan:
     runs-on: ubuntu-latest
     name: Static Code Scan
@@ -81,7 +80,6 @@ jobs:
       uses: actions/checkout@v2
       with:
         ref: prod
-
 
   Code_CI:
     runs-on: ubuntu-latest
@@ -263,7 +261,6 @@ jobs:
         signature_format: cose
         plugin_config: |-
           self_signed=true
-    
           
   deploy_prod:
     runs-on: ubuntu-latest
