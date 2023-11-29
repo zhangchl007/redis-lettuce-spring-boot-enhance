@@ -1,4 +1,4 @@
-FROM openjdk:11
+FROM openjdk:18
 RUN groupadd spring && useradd spring -g spring
 USER spring:spring
 ARG JAR_FILE=target/*.jar
