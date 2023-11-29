@@ -54,7 +54,7 @@ jobs:
     - name: Set up Java version
       uses: actions/setup-java@v1
       with:
-        java-version: '8'
+        java-version: '8,11'
 
     # BUILD MVN & RUN UNIT TEST
     - name: Unit Test with Maven
@@ -96,7 +96,7 @@ jobs:
     # SETING UP JAVA FOR BUILD
     - uses: actions/setup-java@v1
       with:
-        java-version: '8'
+        java-version: '8,11'
     
     # BUILD ONLY NOT TEST & UPLOAD RESULT
     - name: Build Artifact
