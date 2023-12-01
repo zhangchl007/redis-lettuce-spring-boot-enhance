@@ -5,3 +5,4 @@ spring:
     host: 10.1.0.8
     ssl: false
     timeToLive: 60
+    mode: standalone
