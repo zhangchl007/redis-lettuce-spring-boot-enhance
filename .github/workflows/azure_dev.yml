@@ -46,27 +46,30 @@ jobs:
     steps:
     # CHECKOUT DEV
     - name: Checkout Unit Test Files
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         ref: dev
     
     # SET ENV JAVA
     - name: Set up Java version
-      uses: actions/setup-java@v1
+      uses: actions/setup-java@v3
       with:
+        distribution: 'temurin'
         java-version: '11'
+        cache: 'maven'
 
     # BUILD MVN & RUN UNIT TEST
     - name: Unit Test with Maven
-      run: mvn test
+      run: mvn test -Pcoverage
 
     # UPLOAD ARTIFACT
     - name: Upload Artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: UnitTest-Reports
-        path: '${{ github.workspace }}/target/site/jacoco/*'
-
+        path: '${{ github.workspace }}/target/site/jacoco'
+        if-no-files-found: warn
+        retention-days: 5
 
   codescan:
     runs-on: ubuntu-latest
