@@ -11,10 +11,11 @@ on:
   workflow_dispatch:
 
 env:
+  REGISTRY_NAME: myacr0218
   CLUSTER_NAME: aks-staging
   CLUSTER_RESOURCE_GROUP: rg-staging-eastus
   NAMESPACE: redisdemo-dev
-  CONTAINER_REGISTRY_URL: quay.io
+  CONTAINER_REGISTRY_URL: myacr0218.azurecr.io
   CONTAINER_REGISTRY_SECRET: secret-acr
   APP_NAME: redisdev
   IMAGE_TAG: dev
@@ -129,10 +130,10 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
         
-    - name: Connect to Container Registry
+    - name: Connect to Azure Container Registry
       id: login
       run: |
-        docker login ${{ env.CONTAINER_REGISTRY_URL }} -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }}
+        az acr login --name ${{ env.REGISTRY_NAME }}
         
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -143,7 +144,7 @@ jobs:
         context: .
         file: ./Dockerfile
         push: true
-        tags: ${{ env.CONTAINER_REGISTRY_URL }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}
+        tags: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}
         
     - name: Generate Trivy vulnerability scanner Report
       uses: aquasecurity/trivy-action@master
@@ -155,7 +156,7 @@ jobs:
         ignore-unfixed: true
         severity: CRITICAL
         vuln-type: 'os'
-        image-ref: ${{ env.CONTAINER_REGISTRY_URL }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}
+        image-ref: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}
         
     - name: Check Vuln Count
       id: vuln_count
@@ -181,25 +182,25 @@ jobs:
         sudo nohup ./buildkitd &
         popd
         sleep 5
-        sudo docker login ${{ env.CONTAINER_REGISTRY_URL }} -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }}
-        sudo ./copa patch -i ${{ env.CONTAINER_REGISTRY_URL }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }} -r report.json -t ${{ env.IMAGE_TAG }}-1  
+        sudo docker login ${{ env.REGISTRY_NAME }}.azurecr.io -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }}
+        sudo ./copa patch -i ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }} -r report.json -t ${{ env.IMAGE_TAG }}-1  
 
     - name: Docker Push Patched Image
       if: steps.login.conclusion == 'success'
       run: |
-        docker tag ${{ env.CONTAINER_REGISTRY_URL }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}-1 ${{ env.CONTAINER_REGISTRY_URL }}/${{ env.APP_NAME }}:${{ github.sha }}
-        docker push ${{ env.CONTAINER_REGISTRY_URL }}/${{ env.APP_NAME }}:${{ github.sha }}
+        docker tag ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}-1 ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
+        docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
         
     - name: Get image digest
       id: prepare
       run: |
-        DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ env.CONTAINER_REGISTRY_URL }}/${{ env.APP_NAME }}:${{ github.sha }} | cut -d'@' -f2)
+        DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }} | cut -d'@' -f2)
         echo "DIGEST=$DIGEST" >> $GITHUB_OUTPUT
         
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
       with:
-        image-ref: '${{ env.CONTAINER_REGISTRY_URL }}/${{ env.APP_NAME }}:${{ github.sha }}'
+        image-ref: '${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}'
         format: 'sarif'
         output: 'trivy-results.sarif'
         ignore-unfixed: true
@@ -214,7 +215,7 @@ jobs:
     - name: Container image scanning
       uses: erzz/dockle-action@v1
       with:
-        image: ${{ env.CONTAINER_REGISTRY_URL }}/${{ env.APP_NAME }}:${{ github.sha }}
+        image: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
         report-format: sarif
         report-name: dockle-results
         exit-code: 0
@@ -239,7 +240,7 @@ jobs:
     #    plugin_url: https://github.com/Azure/notation-azure-kv/releases/download/v1.0.1/notation-azure-kv_1.0.1_linux_amd64.tar.gz
     #    plugin_checksum: f8a75d9234db90069d9eb5660e5374820edf36d710bd063f4ef81e7063d3810b
     #    key_id: https://mykeyvaultzhangchl007.vault.azure.net/keys/Cloudinfraz/bd2bdc8bb8534a3d93bd3e1f8524785a
-    #    target_artifact_reference: ${{ env.CONTAINER_REGISTRY_URL }}/${{ env.APP_NAME }}@${{ steps.prepare.outputs.DIGEST }}
+    #    target_artifact_reference: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}@${{ steps.prepare.outputs.DIGEST }}
     #    signature_format: cose
     #    plugin_config: |-
     #      self_signed=true
@@ -300,7 +301,7 @@ jobs:
       - name: Helm Deploy and Upgrade to AKS
         run: |
           helm upgrade --install --create-namespace --atomic --wait --namespace ${{ env.NAMESPACE }} ${{ env.APP_NAME }} ./deploy/helm/redisdemo \
-          --set image.name=${{ env.CONTAINER_REGISTRY_URL }}/${{ env.APP_NAME }}:${{ github.sha }} \
+          --set image.name=${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }} \
           --set "ingress.hosts[0].host=redisdev.apps.cloudinfraz.com,ingress.hosts[0].paths[0].path=/api/v1/otp,ingress.hosts[0].paths[0].pathType=Prefix" \
           --set imagePullSecrets[0].name=${{ env.CONTAINER_REGISTRY_SECRET }}
 
