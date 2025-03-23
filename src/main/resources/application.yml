@@ -1,8 +1,8 @@
 spring:
   redis:
-    port: 6379
-    password: du58M6RcqI
-    host: 10.1.0.8
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASS:du58M6RcqI}
+    host: ${REDIS_HOST:redis-headless.redis-test.svc}
     ssl: false
     timeToLive: 60
     mode: standalone
