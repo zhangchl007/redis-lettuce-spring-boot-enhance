@@ -276,8 +276,8 @@ jobs:
             echo "Installing kubelogin..."
             curl -LO https://github.com/Azure/kubelogin/releases/download/v0.0.12/kubelogin-linux-amd64.zip
             unzip kubelogin-linux-amd64.zip
-            mv bin/linux_amd64/kubelogin /usr/bin/
-            chmod +x /usr/bin/kubelogin
+            sudo mv bin/linux_amd64/kubelogin /usr/bin/
+            sudo chmod +x /usr/bin/kubelogin
             rm -rf kubelogin-linux-amd64.zip bin
             echo "kubelogin installed successfully"
           else
