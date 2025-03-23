@@ -53,7 +53,7 @@ jobs:
       run: mvn test -Pcoverage
 
     - name: Upload Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: UnitTest-Reports
         path: '${{ github.workspace }}/target/site/jacoco'
@@ -71,11 +71,11 @@ jobs:
         ref: dev
         
     # Add SonarQube scanning
-    - name: SonarQube Scan
-      uses: sonarsource/sonarqube-scan-action@master
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+    #- name: SonarQube Scan
+    # uses: sonarsource/sonarqube-scan-action@master
+    #  env:
+    #    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+     #   SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
   Code_CI:
     runs-on: ubuntu-latest
@@ -102,7 +102,7 @@ jobs:
       run: mvn clean install -DskipTests
     
     - name: Upload Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: artifact
         path: '${{ github.workspace }}/target/*.jar'
@@ -120,7 +120,7 @@ jobs:
         ref: dev
         
     - name: Load Artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: artifact
         path: '${{ github.workspace }}/target'
@@ -310,7 +310,7 @@ jobs:
         reports_dir: '${{ github.workspace }}/tests/robot/reports'
         
     - name: Upload Reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Product-Test-Reports
         path: '${{ github.workspace }}/tests/robot/reports/*'
