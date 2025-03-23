@@ -275,6 +275,17 @@ jobs:
         with:
           resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
           cluster-name: ${{ env.CLUSTER_NAME }}
+  
+      - name: Ensure kubelogin is installed
+        run: |
+          if ! command -v kubelogin; then
+            echo "Installing kubelogin..."
+            curl -LO https://github.com/Azure/kubelogin/releases/download/v0.0.12/kubelogin-linux-amd64.zip
+            unzip kubelogin-linux-amd64.zip
+            sudo mv kubelogin /usr/local/bin
+          else
+            echo "kubelogin is already installed"
+          fi
 
       - name: Create namespace on AKS
         run: |
