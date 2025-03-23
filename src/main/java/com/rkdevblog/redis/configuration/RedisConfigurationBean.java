@@ -1,6 +1,9 @@
 package com.rkdevblog.redis.configuration;
 
 import io.lettuce.core.ClientOptions;
+import io.lettuce.core.cluster.ClusterClientOptions;
+import io.lettuce.core.cluster.ClusterTopologyRefreshOptions;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -11,7 +14,10 @@ import io.lettuce.core.resource.*;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.epoll.EpollChannelOption;
+
+import org.springframework.data.redis.connection.RedisClusterConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
@@ -28,15 +34,18 @@ public class RedisConfigurationBean {
     private final int port;
     private final String password;
     private final String useSSL;
+	private final String mode;
 
 
     public RedisConfigurationBean(@Value("${spring.redis.host}") String url,
                                   @Value("${spring.redis.port}") int port,
                                   @Value("${spring.redis.ssl}")  String useSSL,
+								  @Value("${spring.redis.mode}") String mode,
                                   @Value("${spring.redis.password}") String password) {
         this.url = url;
         this.port = port;
         this.useSSL = useSSL;
+		this.mode = mode;
         this.password = password;
 
     }
@@ -83,23 +92,55 @@ public class RedisConfigurationBean {
 
     @Bean
 	public RedisConnectionFactory redisConnectionFactory() {
-//		RedisNode redisNode = RedisNode.newRedisNode().listeningAt(redisHost, Integer.parseInt(redisPort)).build();
+		//  Redis Standalone connection mode
+        if ("standalone".equals(mode)) {
+			
+			RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
+			config.setHostName(url);
+			config.setPassword(password);
+			config.setPort(port);
 
-		RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
-		config.setHostName(url);
-		config.setPassword(password);
-		config.setPort(port);
+			LettuceClientConfiguration clientConfig;
 
-		LettuceClientConfiguration clientConfig;
+			if("false".equals(useSSL)) {
+				clientConfig = LettuceClientConfiguration.builder().clientOptions(clientOptions())
+																					.clientResources(clientResources()).build();
+			} else {
+				clientConfig = LettuceClientConfiguration.builder().clientOptions(clientOptions()).clientResources(clientResources()).useSsl().build();
+			}
 
-		if("false".equals(useSSL)) {
-			 clientConfig = LettuceClientConfiguration.builder().clientOptions(clientOptions())
-																				.clientResources(clientResources()).build();
+			return new LettuceConnectionFactory(config, clientConfig);
 		} else {
-			clientConfig = LettuceClientConfiguration.builder().clientOptions(clientOptions()).clientResources(clientResources()).useSsl().build();
-		}
+            //Redis Cluster connection mode
+			RedisClusterConfiguration clusterConfig = new RedisClusterConfiguration();
+			clusterConfig.setPassword(RedisPassword.of(password));
+			clusterConfig.clusterNode("localhost", 6379);
 
-		return new LettuceConnectionFactory(config, clientConfig);
+			ClusterTopologyRefreshOptions topologyRefreshOptions = ClusterTopologyRefreshOptions.builder()
+				.enableAllAdaptiveRefreshTriggers()
+				.build();
+
+			ClusterClientOptions clusterClientOptions = ClusterClientOptions.builder()
+				.topologyRefreshOptions(topologyRefreshOptions)
+				.build();
+
+			LettuceClientConfiguration clientConfig;
+
+			if("false".equals(useSSL)) {
+				clientConfig = LettuceClientConfiguration.builder()
+					.clientOptions(clusterClientOptions)
+					.clientResources(clientResources())
+					.build();
+			} else {
+				clientConfig = LettuceClientConfiguration.builder()
+					.clientOptions(clusterClientOptions)
+					.clientResources(clientResources())
+					.useSsl()
+					.build();
+			}
+
+			return new LettuceConnectionFactory(clusterConfig, clientConfig);
+		}
 	}
 
     /**

@@ -5,3 +5,4 @@ spring:
     host: ${REDIS_HOST:redis-headless.redis-test.svc}
     ssl: false
     timeToLive: 60
+    mode: standalone
