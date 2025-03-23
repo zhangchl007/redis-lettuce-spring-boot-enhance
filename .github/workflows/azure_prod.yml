@@ -11,7 +11,7 @@ env:
   CLUSTER_NAME: aks-staging
   CLUSTER_RESOURCE_GROUP: rg-staging-eastus
   NAMESPACE: redisdemo-prod
-  CONTAINER_REGISTRY_URL: quay.io
+  CONTAINER_REGISTRY_URL: docker.io/zhangchl007
   CONTAINER_REGISTRY_SECRET: secret-acr
   APP_NAME: redisprod
   IMAGE_TAG: prod
