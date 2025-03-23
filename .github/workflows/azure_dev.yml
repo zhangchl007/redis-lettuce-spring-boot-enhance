@@ -1,11 +1,6 @@
 name: DevSecOps Pipeline
 
 on:
-#workflow_run:
-#  workflows: ["CodeQLAdvancedAnalysis"]
-#  branches: [dev]
-#  types:
-#  - completed
   push:
     branches:
       - dev
@@ -26,16 +21,14 @@ env:
   IMAGE_TAG: dev
 
 jobs:
-
   provision:
     if: github.event.pull_request.merged == false
     runs-on: ubuntu-latest
     name: Provisioning Infra & Configuration
 
     steps:
-    # CHECKOUT CONFIGUTAION FILES
     - name: Load Configuration Files
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         ref: dev
 
@@ -44,13 +37,11 @@ jobs:
     name: Unit Test
 
     steps:
-    # CHECKOUT DEV
     - name: Checkout Unit Test Files
       uses: actions/checkout@v3
       with:
         ref: dev
     
-    # SET ENV JAVA
     - name: Set up Java version
       uses: actions/setup-java@v3
       with:
@@ -58,11 +49,9 @@ jobs:
         java-version: '11'
         cache: 'maven'
 
-    # BUILD MVN & RUN UNIT TEST
     - name: Unit Test with Maven
       run: mvn test -Pcoverage
 
-    # UPLOAD ARTIFACT
     - name: Upload Artifact
       uses: actions/upload-artifact@v3
       with:
@@ -77,10 +66,16 @@ jobs:
 
     steps:
     - name: Checkout Code for Scanning
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         ref: dev
-
+        
+    # Add SonarQube scanning
+    - name: SonarQube Scan
+      uses: sonarsource/sonarqube-scan-action@master
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
   Code_CI:
     runs-on: ubuntu-latest
@@ -91,25 +86,27 @@ jobs:
       - codescan
 
     steps:
-    # CHECKOUT SOURCE CODE
-    - uses: actions/checkout@v2
+    - name: Checkout Source Code
+      uses: actions/checkout@v3
       with:
         ref: dev
 
-    # SETING UP JAVA FOR BUILD
-    - uses: actions/setup-java@v1
+    - name: Set up Java for Build
+      uses: actions/setup-java@v3
       with:
+        distribution: 'temurin'
         java-version: '11'
+        cache: 'maven'
     
-    # BUILD ONLY NOT TEST & UPLOAD RESULT
     - name: Build Artifact
       run: mvn clean install -DskipTests
     
     - name: Upload Artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: artifact
         path: '${{ github.workspace }}/target/*.jar'
+        retention-days: 5
 
   build_image_scanning:
     runs-on: ubuntu-latest
@@ -117,29 +114,30 @@ jobs:
     needs: Code_CI
 
     steps:
-    # REQUIRED LOAD DOCKER FILE
     - name: Load Dockerfile
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         ref: dev
-    # DOWNLOAD ARTIFACT
+        
     - name: Load Artifact
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: artifact
         path: '${{ github.workspace }}/target'
-    #Login Azure
+        
     - name: Connect to Azure 
       uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
-     # CONNECT TO AZURE CONTAINER REGISTRY
+        
     - name: Connect to Azure Container Registry
       id: login
       run: |
-        az acr login --name ${{ env.REGISTRY_NAME }}.azurecr.io
-
-    # BUILD IMAGE & PUSH TO AZURE CONTAINER REGISTRY
+        az acr login --name ${{ env.REGISTRY_NAME }}
+        
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+        
     - name: Build image & Push to Azure Container Registry
       uses: docker/build-push-action@v5
       with:
@@ -147,9 +145,7 @@ jobs:
         file: ./Dockerfile
         push: true
         tags: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@master
-      #Generate Trivy vulnerability scanner Report
+        
     - name: Generate Trivy vulnerability scanner Report
       uses: aquasecurity/trivy-action@master
       with:
@@ -160,13 +156,15 @@ jobs:
         ignore-unfixed: true
         severity: CRITICAL
         vuln-type: 'os'
-        image-ref: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:dev
+        image-ref: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}
+        
     - name: Check Vuln Count
       id: vuln_count
       run: |
         report_file="report.json"
         vuln_count=$(jq '.Results | length' "$report_file")
         echo "vuln_count=$vuln_count" >> $GITHUB_OUTPUT 
+        
     - name: Patch with Copacetic
       if: steps.vuln_count.outputs.vuln_count != '0'
       id: copa
@@ -178,40 +176,27 @@ jobs:
           tar -xzf $DOWNLOAD_FILE
           rm $DOWNLOAD_FILE
         }
-        download https://github.com/project-copacetic/copacetic/releases/download/v0.2.0/copa_0.2.0_linux_amd64.tar.gz copa_0.2.0_linux_amd64.tar.gz
-        download https://github.com/moby/buildkit/releases/download/v0.11.6/buildkit-v0.11.6.linux-amd64.tar.gz buildkit-v0.11.6.linux-amd64.tar.gz
+        download https://github.com/project-copacetic/copacetic/releases/download/v0.3.0/copa_0.3.0_linux_amd64.tar.gz copa_0.3.0_linux_amd64.tar.gz
+        download https://github.com/moby/buildkit/releases/download/v0.12.5/buildkit-v0.12.5.linux-amd64.tar.gz buildkit-v0.12.5.linux-amd64.tar.gz
         pushd ./bin
         sudo nohup ./buildkitd &
         popd
         sleep 5
         sudo docker login ${{ env.REGISTRY_NAME }}.azurecr.io -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }}
         sudo ./copa patch -i ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }} -r report.json -t ${{ env.IMAGE_TAG }}-1  
-#    - name: Docker Login
-#     run: |
-#       sudo docker login ${{ env.REGISTRY_NAME }}.azurecr.io -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }}
-#
-#   - name: Copa Action
-#     if: steps.vuln_count.outputs.vuln_count != '0' && steps.login.conclusion == 'success'
-#     id: copa
-#     uses: project-copacetic/copa-action@v1.0.0
-#     with:
-#       image: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}
-#       image-report: 'report.json'
-#       patched-tag: ${{ env.IMAGE_TAG }}-1 
-#       buildkit-version: 'v0.11.6'
-        # optional, default is latest
-       # copa-version: '0.3.0'
 
-     # PUSH TO AZURE CONTAINER REGISTRY
     - name: Docker Push Patched Image
       if: steps.login.conclusion == 'success'
       run: |
-        docker tag  ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}-1 ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
+        docker tag ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}-1 ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
         docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
+        
     - name: Get image digest
       id: prepare
-      run : |
-          echo "DIGEST=$(docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}| grep -oE 'sha256:[a-f0-9]{64}')" >> $GITHUB_OUTPUT
+      run: |
+        DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }} | cut -d'@' -f2)
+        echo "DIGEST=$DIGEST" >> $GITHUB_OUTPUT
+        
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
       with:
@@ -223,7 +208,7 @@ jobs:
         severity: 'CRITICAL'
       
     - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: 'trivy-results.sarif'
    
@@ -233,25 +218,21 @@ jobs:
         image: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
         report-format: sarif
         report-name: dockle-results
-        #failure-threshold: fatal
         exit-code: 0
         dockle-version: 0.4.11
         accept-extensions: pem
         
     - name: Upload SARIF file
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: dockle-results.sarif
        
-    - name: setup Notation CLI
-    # You may pin to the exact commit or the version.
-    # uses: notaryproject/notation-action@629fbef7d1d82d69ef1f4fb78e7e0d91702e3366
+    - name: Setup Notation CLI
       uses: notaryproject/notation-action@v1.0.0
       with:
-        # version of official Notation CLI [release](https://github.com/notaryproject/notation/releases). This field is ignored if 'url' is present.
         version: "1.0.0"
 
-    - name: sign releasd artifact with notation-azure-kv plugin
+    - name: Sign released artifact with notation-azure-kv plugin
       uses: notaryproject/notation-action/sign@v1
       with:
         plugin_name: azure-kv
@@ -267,40 +248,35 @@ jobs:
   deploy_dev:
     runs-on: ubuntu-latest
     needs: build_image_scanning
-    name: Deloy to DEV
+    name: Deploy to DEV
     environment:
       name: DEV
       url: 'http://redisdev.apps.cloudinfraz.com/api/v1/otp'
 
     steps:
-      # LOAD HELM CONFIG FOR DEPLOY
       - name: Load Helm configuration files
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: dev
       
-      # INSTALL HELM ON GITHUB HOST
       - name: Install Helm on GitHub host
         uses: Azure/setup-helm@v1
         with:
-          version: v3.3.1
+          version: v3.13.3
 
-      # LOGIN AKS WITH CREDENTAIL
-      - name: Login Azure Kubernates
-        uses: Azure/aks-set-context@v1
+      - name: Login Azure Kubernetes
+        uses: Azure/aks-set-context@v3
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
           resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
           cluster-name: ${{ env.CLUSTER_NAME }}
 
-      # CREATE NAMESPACE IF NOT EXIST
       - name: Create namespace on AKS
         run: |
-          kubectl create namespace ${{ env.NAMESPACE }} --dry-run -o json | kubectl apply -f -
+          kubectl create namespace ${{ env.NAMESPACE }} --dry-run=client -o json | kubectl apply -f -
       
-      # CREATE IMAGE ACR SECRET IF NOT EXIST
       - name: Create Image ACR Secret If not exist
-        uses: azure/k8s-create-secret@v1
+        uses: azure/k8s-create-secret@v4
         with:
           namespace: ${{ env.NAMESPACE }}
           container-registry-url: ${{ env.CONTAINER_REGISTRY_URL }}
@@ -309,12 +285,11 @@ jobs:
           secret-name: ${{ env.CONTAINER_REGISTRY_SECRET }}
         id: create-secret
       
-      # HELM DEPLOY OR UPGRADE TO AKS
       - name: Helm Deploy and Upgrade to AKS
         run: |
-          pwd
-          helm upgrade --install --create-namespace --atomic --wait --namespace ${{ env.NAMESPACE }} ${{ env.APP_NAME }}  ./deploy/helm/redisdemo \
-          --set image.name=${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }} --set "ingress.hosts[0].host=redisdev.apps.cloudinfraz.com,ingress.hosts[0].paths[0].path=/api/v1/otp,ingress.hosts[0].paths[0].pathType=Prefix"  \
+          helm upgrade --install --create-namespace --atomic --wait --namespace ${{ env.NAMESPACE }} ${{ env.APP_NAME }} ./deploy/helm/redisdemo \
+          --set image.name=${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }} \
+          --set "ingress.hosts[0].host=redisdev.apps.cloudinfraz.com,ingress.hosts[0].paths[0].path=/api/v1/otp,ingress.hosts[0].paths[0].pathType=Prefix" \
           --set imagePullSecrets[0].name=${{ env.CONTAINER_REGISTRY_SECRET }}
 
   integrate_test:
@@ -324,27 +299,27 @@ jobs:
 
     steps:
     - name: Checkout Source Code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         ref: dev
 
-    # EXECUTE PRODUCT TEST WITH ROBOT FRAMEWORK ACTION
     - name: Robot Framework Action
       uses: tarathep/robotframework-github-action@v1.0
       with:
         tests_dir: '${{ github.workspace }}/tests/robot'
         reports_dir: '${{ github.workspace }}/tests/robot/reports'
-    # UPLOAD REPORTS
+        
     - name: Upload Reports
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
-        name: Product Test Reports
+        name: Product-Test-Reports
         path: '${{ github.workspace }}/tests/robot/reports/*'
+        retention-days: 5
 
     - name: OWASP ZAP Scan-DAST
-      uses: zaproxy/action-baseline@v0.6.1
+      uses: zaproxy/action-baseline@v0.9.0
       with:
         docker_name: 'owasp/zap2docker-stable'
-        target: 'http://zhangchl007.github.io/'
+        target: 'http://redisdev.apps.cloudinfraz.com/api/v1/otp'
         rules_file_name: '.zap/rules.tsv'
         cmd_options: '-a'
