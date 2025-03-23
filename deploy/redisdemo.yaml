@@ -28,6 +28,13 @@ spec:
         ports:
         - containerPort: 8080
           protocol: TCP
+        env:
+          - name: REDIS_HOST
+            value: redis-headless.redis-test.svc
+          - name: REDIS_PORT
+            value: "6379"
+          - name: REDIS_PASS
+            value: du58M6RcqI
 ---
 apiVersion: v1
 kind: Service
