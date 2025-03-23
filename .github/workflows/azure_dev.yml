@@ -264,25 +264,19 @@ jobs:
         uses: Azure/setup-helm@v1
         with:
           version: v3.13.3
+  
+      - name: Set up kubelogin for non-interactive login
+        run: |
+          curl -LO https://github.com/Azure/kubelogin/releases/download/v0.0.9/kubelogin-linux-amd64.zip
+          sudo unzip -j kubelogin-linux-amd64.zip -d /usr/local/bin
+          rm -f kubelogin-linux-amd64.zip
+          kubelogin --version
 
       - name: Connect to Azure 
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-  
-      - name: Ensure kubelogin is installed
-        run: |
-          if ! command -v kubelogin; then
-            echo "Installing kubelogin..."
-            curl -LO https://github.com/Azure/kubelogin/releases/download/v0.0.12/kubelogin-linux-amd64.zip
-            unzip kubelogin-linux-amd64.zip
-            sudo mv bin/linux_amd64/kubelogin /usr/bin/
-            sudo chmod +x /usr/bin/kubelogin
-            rm -rf kubelogin-linux-amd64.zip bin
-            echo "kubelogin installed successfully"
-          else
-            echo "kubelogin is already installed"
-          fi
+          
       - name: Login Azure Kubernetes
         uses: Azure/aks-set-context@v3
         with:
