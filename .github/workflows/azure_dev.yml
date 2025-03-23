@@ -269,12 +269,6 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Login Azure Kubernetes
-        uses: Azure/aks-set-context@v3
-        with:
-          resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
-          cluster-name: ${{ env.CLUSTER_NAME }}
   
       - name: Ensure kubelogin is installed
         run: |
@@ -282,10 +276,18 @@ jobs:
             echo "Installing kubelogin..."
             curl -LO https://github.com/Azure/kubelogin/releases/download/v0.0.12/kubelogin-linux-amd64.zip
             unzip kubelogin-linux-amd64.zip
-            sudo mv kubelogin /usr/local/bin
+            mv bin/linux_amd64/kubelogin /usr/bin/
+            chmod +x /usr/bin/kubelogin
+            rm -rf kubelogin-linux-amd64.zip bin
+            echo "kubelogin installed successfully"
           else
             echo "kubelogin is already installed"
           fi
+      - name: Login Azure Kubernetes
+        uses: Azure/aks-set-context@v3
+        with:
+          resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
+          cluster-name: ${{ env.CLUSTER_NAME }}
 
       - name: Create namespace on AKS
         run: |
