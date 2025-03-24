@@ -77,5 +77,18 @@ public class OTPCacheRepository implements CacheRepository {
             throw new OTPServiceException("Error while removing from the cache ", e);
         }
     }
-
+    
+    /**
+     * Ping the cache to check the connection.
+     *
+     * @return result of ping command from Redis
+     */
+    @Override
+    public String ping() {
+        try {
+            return redisTemplate.getConnectionFactory().getConnection().ping();
+        } catch (RuntimeException e) {
+            throw new OTPServiceException("Error while pinging the cache ", e);
+        }
+    }
 }

@@ -30,4 +30,7 @@ public interface CacheRepository {
      */
     void remove(String key);
 
+    // Implement this method to check cache connectivity
+    String ping();
+
 }

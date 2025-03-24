@@ -6,3 +6,9 @@ spring:
     ssl: false
     timeToLive: 60
     mode: standalone
+    
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
