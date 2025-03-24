@@ -16,7 +16,7 @@ env:
   NAMESPACE: redisdemo-dev
   CONTAINER_REGISTRY_URL: docker.io/zhangchl007
   CONTAINER_REGISTRY_SECRET: secret-acr
-  APP_NAME: redisdev
+  APP_NAME: redisdemo
   IMAGE_TAG: dev
 
 jobs:
