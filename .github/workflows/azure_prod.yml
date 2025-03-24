@@ -14,8 +14,7 @@ env:
   CONTAINER_REGISTRY_URL: docker.io/zhangchl007
   CONTAINER_REGISTRY_SECRET: secret-acr
   APP_NAME: redisdemo
-  IMAGE_TAG: prod
-
+  IMAGE_TAG: v${{ github.run_number }}
 jobs:
 
   provision:
