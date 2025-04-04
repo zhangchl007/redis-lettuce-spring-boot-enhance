@@ -11,7 +11,7 @@ pipeline {
         REPO_URL = 'docker.io/zhangchl007' // Replace with the actual ECR repository URL
         APP_NAME = 'redisdemo' // Replace with the name of your ECR application
         IMAGE_REPO = "$REPO_URL/$APP_NAME"
-        IMAGE_TAG = "v${env.BUILD_NUMBER}"
+        IMAGE_TAG = "v2${env.BUILD_NUMBER}"
     }
 
     stages {
