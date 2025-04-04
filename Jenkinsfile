@@ -4,12 +4,6 @@
 pipeline {
     agent any
 
-    tools {
-        // Specify the required tools and their versions
-        maven 'maven3'
-        jdk 'jdk11'
-    }
-
     environment {
         // Define environment variables
         SONAR_TOKEN = credentials('sonarqube-token') // Store SonarQube token in Jenkins credentials
