@@ -51,9 +51,8 @@ pipeline {
                     sh """
                         mkdir -p ~/.docker
                         echo '{"auths": {"https://index.docker.io/v1/": {"auth": "'\$(echo -n "\$DOCKER_USER:\$DOCKER_PASS" | base64)'"}}}' > ~/.docker/config.json
-
                         buildctl \\
-                        --addr tcp://buildkitd.jenkins.svc.cluster.local:1234 \\
+                        --addr tcp://buildkitd-non-tls.jenkins.svc.cluster.local:1234 \\
                         build \\
                         --frontend=dockerfile.v0 \\
                         --local context=. \\
