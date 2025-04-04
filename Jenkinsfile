@@ -19,7 +19,6 @@ pipeline {
         stage('Compile Source Code') {
             steps {
                 echo 'Compiling Source code...'
-                // Compile the source code
                 sh 'mvn compile'
             }
         }
@@ -27,7 +26,6 @@ pipeline {
         stage('Unit Test') {
             steps {
                 echo 'Testing the code...'
-                // Run unit tests (skipping tests for now)
                 sh 'mvn test -DskipTests=true'
             }
         }
@@ -35,19 +33,14 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 echo 'SonarQube Analysis started...'
-                script {
-                    // Run SonarQube analysis
-                    withSonarQubeEnv('sonarqube') {
-                        sh "mvn sonar:sonar -Dsonar.projectKey=devsecops -Dsonar.projectName=devsecops -Dsonar.host.url=http://sonarqube-sonarqube.devops.svc.cluster.local -Dsonar.login=${SONAR_TOKEN} -Dsonar.sources=src/main/java -Dsonar.java.binaries=target/classes"
-                    }
-                }
+                // Directly call Maven sonar:sonar with required properties
+                sh "mvn sonar:sonar -Dsonar.projectKey=devsecops -Dsonar.projectName=devsecops -Dsonar.host.url=http://sonarqube-sonarqube.devops.svc.cluster.local -Dsonar.login=${SONAR_TOKEN} -Dsonar.sources=src/main/java -Dsonar.java.binaries=target/classes"
             }
         }
 
         stage('Build Source Code') {
             steps {
                 echo 'Building Source code...'
-                // Build the source code (skipping tests)
                 sh 'mvn package -DskipTests=true'
             }
         }
