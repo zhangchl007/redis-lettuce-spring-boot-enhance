@@ -8,7 +8,7 @@ pipeline {
         // Define environment variables
         SONAR_TOKEN = credentials('sonarqube-token') // Store SonarQube token in Jenkins credentials
         NEXUS_URL = 'http://nexus.example.com/repository/releases/' // Replace with your Nexus URL
-        REPO_URL = 'docker.io/zhangchl' // Replace with the actual ECR repository URL
+        REPO_URL = 'docker.io/zhangchl007' // Replace with the actual ECR repository URL
         APP_NAME = 'redisdemo' // Replace with the name of your ECR application
         IMAGE_REPO = "$REPO_URL/$APP_NAME"
         IMAGE_TAG = "v${env.BUILD_NUMBER}"
