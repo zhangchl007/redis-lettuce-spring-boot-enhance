@@ -15,11 +15,11 @@ pipeline {
         // Define environment variables
         SONARQUBE_ENV = 'sonarqube'
         SONAR_TOKEN = credentials('sonarqube-token') // Store SonarQube token in Jenkins credentials
-        NEXUS_URL = 'http://nexus-service.devops.svc.cluster.local/repository/redisdemo-release' // Replace with your Nexus URL
+        NEXUS_URL = 'nexus-service.devops.svc.cluster.local' // Replace with your Nexus URL
         REPO_URL = 'docker.io/zhangchl007' // Replace with your Docker repository URL
         APP_NAME = 'redisdemo' // Replace with your application name
         IMAGE_REPO = "$REPO_URL/$APP_NAME"
-        IMAGE_TAG = "v2${env.BUILD_NUMBER}"
+        IMAGE_TAG = "v2${env.BUILD_NUMBER}-prod"
         NEXUS_RELEASE_REPO = 'redisdemo-release' // Replace with your Nexus release repository
     }
 
@@ -70,22 +70,28 @@ pipeline {
             }
         }
 
-        stage('Publish to Nexus') {
+       stage('Publish to Nexus') {
             steps {
                 echo 'Publishing to Nexus...'
-                withCredentials([usernamePassword(credentialsId: 'nexus-auth', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
-                    sh """
-                        mvn deploy:deploy-file \\
-                            -DgroupId=com.rkdevblog \\
-                            -DartifactId=${APP_NAME} \\
-                            -Dversion=${env.BUILD_NUMBER} \\
-                            -Dpackaging=jar \\
-                            -Dfile=target/${APP_NAME}-0.0.1-SNAPSHOT.jar \\
-                            -DrepositoryId=${NEXUS_RELEASE_REPO} \\
-                            -Durl=${NEXUS_URL} \\
-                            -Dusername=${NEXUS_USER} \\
-                            -Dpassword=${NEXUS_PASS}
-                    """
+                script {
+                    def readPomVersion = readMavenPom file: 'pom.xml'
+                    nexusArtifactUploader (
+                        nexusVersion: 'nexus3', 
+                        protocol: 'http', 
+                        nexusUrl: "${NEXUS_URL}", 
+                        repository: "${NEXUS_RELEASE_REPO}",
+                        groupId: 'com.rkdevblog', 
+                        version: "${readPomVersion.version}",
+                        credentialsId: 'nexus-auth', 
+                        artifacts: [
+                            [
+                                artifactId: "${APP_NAME}", 
+                                classifier: '',
+                                file: "target/${APP_NAME}-${readPomVersion.version}.jar",
+                                type: 'jar'
+                            ]
+                        ]
+                    )
                 }
             }
         }

@@ -19,7 +19,7 @@ pipeline {
         REPO_URL = 'docker.io/zhangchl007' // Replace with your Docker repository URL
         APP_NAME = 'redisdemo' // Replace with your application name
         IMAGE_REPO = "$REPO_URL/$APP_NAME"
-        IMAGE_TAG = "v2${env.BUILD_NUMBER}"
+        IMAGE_TAG = "v2${env.BUILD_NUMBER}-dev"
         NEXUS_RELEASE_REPO = 'redisdemo-release' // Replace with your Nexus release repository
     }
 
