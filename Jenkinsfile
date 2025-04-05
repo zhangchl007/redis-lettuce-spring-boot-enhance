@@ -1,8 +1,6 @@
-// Jenkins Pipeline script for building, testing, and deploying a Java application.
-
+// filepath: /home/zhangchl007/azure/aks/gitops/argocd-practice/redis-lettuce-spring-boot-enhance/Jenkinsfile
 pipeline {
 
-    // kubernetes agent
     agent {
         kubernetes {
             label 'jenkins-agent'
@@ -12,7 +10,6 @@ pipeline {
     }
     
     environment {
-        // Define environment variables
         SONARQUBE_ENV = 'sonarqube'
         SONAR_TOKEN = credentials('sonarqube-token') // Store SonarQube token in Jenkins credentials
         NEXUS_URL = 'nexus-service.devops.svc.cluster.local' // Replace with your Nexus URL
@@ -24,53 +21,53 @@ pipeline {
     }
 
     stages {
-
-        stage('Compile Source Code') {
-            steps {
-                echo 'Compiling Source code...'
-                sh 'mvn compile'
-            }
-        }
-
-        stage('Unit Test') {
-            steps {
-                echo 'Testing the code...'
-                sh 'mvn test -DskipTests=true'
-            }
-        }
-
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv("${SONARQUBE_ENV}") {
-                    // Use the SonarQube environment variable to run the analysis
-                    echo 'Running SonarQube Analysis...'
-                    sh 'mvn sonar:sonar -Dsonar.projectKey=devsecops -Dsonar.projectName=devsecops -Dsonar.host.url=http://sonarqube-sonarqube.devops.svc.cluster.local:9000 -Dsonar.login=${SONAR_TOKEN} -Dsonar.sources=src/main/java -Dsonar.java.binaries=target/classes'
+        stage('Parallel Tasks') {
+            parallel {
+                stage('Compile Source Code') {
+                    steps {
+                        echo 'Compiling Source code...'
+                        sh 'mvn compile'
+                    }
                 }
-            
-            }
-        }
 
-        stage('SonarQube Quality Gate') {
-            steps {
-                script {
-                    timeout(time: 10, unit: 'MINUTES') {
-                        def qg = waitForQualityGate()
-                        if (qg.status != 'OK') {
-                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
+                stage('Unit Test') {
+                    steps {
+                        echo 'Testing the code...'
+                        sh 'mvn test -DskipTests=true'
+                    }
+                }
+
+                stage('SonarQube Analysis') {
+                    steps {
+                        withSonarQubeEnv("${SONARQUBE_ENV}") {
+                            echo 'Running SonarQube Analysis...'
+                            sh 'mvn sonar:sonar -Dsonar.projectKey=devsecops -Dsonar.projectName=devsecops -Dsonar.host.url=http://sonarqube-sonarqube.devops.svc.cluster.local:9000 -Dsonar.login=${SONAR_TOKEN} -Dsonar.sources=src/main/java -Dsonar.java.binaries=target/classes'
                         }
+                    }
+                }
+
+                stage('SonarQube Quality Gate') {
+                    steps {
+                        script {
+                            timeout(time: 10, unit: 'MINUTES') {
+                                def qg = waitForQualityGate()
+                                if (qg.status != 'OK') {
+                                    error "Pipeline aborted due to quality gate failure: ${qg.status}"
+                                }
+                            }
+                        }
+                    }
+                }
+
+                stage('Build Source Code') {
+                    steps {
+                        echo 'Building Source code...'
+                        sh 'mvn clean install'
                     }
                 }
             }
         }
-
-        stage('Build Source Code') {
-            steps {
-                echo 'Building Source code...'
-                sh 'mvn clean install'
-            }
-        }
-
-       stage('Publish to Nexus') {
+        stage('Publish to Nexus') {
             steps {
                 echo 'Publishing to Nexus...'
                 script {
@@ -95,13 +92,11 @@ pipeline {
                 }
             }
         }
-
-         stage('Approval to Deploy to Production') {
+        stage('Approval to Deploy to Production') {
             steps {
                 input 'Approve deployment to production?'
             }
         }
-
         stage('Build Image with BuildKit') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'docklogin', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
