@@ -74,6 +74,12 @@ pipeline {
                 echo 'Publishing to Nexus...'
                 withCredentials([usernamePassword(credentialsId: 'nexus-auth', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
                     sh """
+                        echo '{
+                            "nexus": {
+                                "username": "${NEXUS_USER}",
+                                "password": "${NEXUS_PASS}"
+                            }
+                        }' > ~/.m2/settings.xml
                         mvn deploy:deploy-file \\
                             -DgroupId=com.rkdevblog \\
                             -DartifactId=${APP_NAME} \\
