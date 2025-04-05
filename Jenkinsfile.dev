@@ -77,8 +77,8 @@ pipeline {
                     def readPomVersion = readMavenPom file: 'pom.xml'
                     nexusArtifactUploader artifacts: [
                         [artifactId: "${APP_NAME}", 
-                         classifier: '', 
-                         file: "target/${APP_NAME}.jar", 
+                         classifier: '',
+                         file: "target/${APP_NAME}-${readPomVersion.version}.jar",
                          type: 'jar', 
                          version: "${readPomVersion.version}"]
                     ],
