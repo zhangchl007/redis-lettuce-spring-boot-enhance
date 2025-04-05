@@ -96,6 +96,12 @@ pipeline {
             }
         }
 
+         stage('Approval to Deploy to Production') {
+            steps {
+                input 'Approve deployment to production?'
+            }
+        }
+
         stage('Build Image with BuildKit') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'docklogin', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
