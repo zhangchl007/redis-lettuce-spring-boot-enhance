@@ -14,7 +14,7 @@ pipeline {
         // Define environment variables
         SONARQUBE_ENV = 'sonarqube'
         SONAR_TOKEN = credentials('sonarqube-token') // Store SonarQube token in Jenkins credentials
-        NEXUS_URL = 'http://nexus.example.com/repository/releases/' // Replace with your Nexus URL
+        NEXUS_URL = 'http://nexus-service.devops.svc.cluster.local/repository/redisdemo-release' // Replace with your Nexus URL
         REPO_URL = 'docker.io/zhangchl007' // Replace with your Docker repository URL
         APP_NAME = 'redisdemo' // Replace with your application name
         IMAGE_REPO = "$REPO_URL/$APP_NAME"
