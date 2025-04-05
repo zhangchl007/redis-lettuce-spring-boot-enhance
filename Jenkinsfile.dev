@@ -2,7 +2,10 @@
 
 pipeline {
     
-    agent any
+    agent  {  
+        name 'jenkins-agent' 
+        label 'jenkins-agent'
+    }
 
     environment {
         // Define environment variables
