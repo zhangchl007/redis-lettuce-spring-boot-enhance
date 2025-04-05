@@ -1,12 +1,15 @@
 // Jenkins Pipeline script for building, testing, and deploying a Java application.
 
 pipeline {
-    
-    agent  {  
-        name 'jenkins-agent' 
-        label 'jenkins-agent'
-    }
 
+    // kubernetes agent
+    agent {
+        kubernetes {
+            label 'jenkins-agent'
+        }
+
+    }
+    
     environment {
         // Define environment variables
         SONARQUBE_ENV = 'sonarqube'

@@ -1,11 +1,18 @@
 // Jenkins Pipeline script for building, testing, and deploying a Java application.
 
 pipeline {
-    
-    agent  { label 'jenkins-agent' } 
 
+    // kubernetes agent
+    agent {
+        kubernetes {
+            label 'jenkins-agent'
+        }
+
+    }
+    
     environment {
         // Define environment variables
+        SONARQUBE_ENV = 'sonarqube'
         SONAR_TOKEN = credentials('sonarqube-token') // Store SonarQube token in Jenkins credentials
         NEXUS_URL = 'http://nexus.example.com/repository/releases/' // Replace with your Nexus URL
         REPO_URL = 'docker.io/zhangchl007' // Replace with your Docker repository URL
@@ -33,9 +40,12 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                echo 'SonarQube Analysis started...'
-                // Directly call Maven sonar:sonar with required properties
-                sh "mvn sonar:sonar -Dsonar.projectKey=devsecops -Dsonar.projectName=devsecops -Dsonar.host.url=http://sonarqube-sonarqube.devops.svc.cluster.local:9000 -Dsonar.login=${SONAR_TOKEN} -Dsonar.sources=src/main/java -Dsonar.java.binaries=target/classes"
+                withSonarQubeEnv("${SONARQUBE_ENV}") {
+                    // Use the SonarQube environment variable to run the analysis
+                    echo 'Running SonarQube Analysis...'
+                    sh 'mvn sonar:sonar -Dsonar.projectKey=devsecops -Dsonar.projectName=devsecops -Dsonar.host.url=http://sonarqube-sonarqube.devops.svc.cluster.local:9000 -Dsonar.login=${SONAR_TOKEN} -Dsonar.sources=src/main/java -Dsonar.java.binaries=target/classes'
+                }
+            
             }
         }
 
