@@ -15,7 +15,7 @@ pipeline {
         // Define environment variables
         SONARQUBE_ENV = 'sonarqube'
         SONAR_TOKEN = credentials('sonarqube-token') // Store SonarQube token in Jenkins credentials
-        NEXUS_URL = 'http://nexus-service.devops.svc.cluster.local/repository/redisdemo-release' // Replace with your Nexus URL
+        NEXUS_URL = 'nexus-service.devops.svc.cluster.local' // Replace with your Nexus URL
         REPO_URL = 'docker.io/zhangchl007' // Replace with your Docker repository URL
         APP_NAME = 'redisdemo' // Replace with your application name
         IMAGE_REPO = "$REPO_URL/$APP_NAME"
@@ -75,20 +75,23 @@ pipeline {
                 echo 'Publishing to Nexus...'
                 script {
                     def readPomVersion = readMavenPom file: 'pom.xml'
-                    nexusArtifactUploader artifacts: [
-                        [artifactId: "${APP_NAME}", 
-                         classifier: '',
-                         file: "target/${APP_NAME}-${readPomVersion.version}.jar",
-                         type: 'jar', 
-                         version: "${readPomVersion.version}"]
-                    ],
-                    credentialsId: 'nexus-auth', 
-                    groupId: 'com.rkdevblog', 
-                    nexusUrl: "${NEXUS_URL}",
-                    nexusVersion: 'nexus3', 
-                    protocol: 'http', 
-                    repository: "${NEXUS_RELEASE_REPO}",
-                    version: "${readPomVersion.version}"
+                    nexusArtifactUploader (
+                        nexusVersion: 'nexus3', 
+                        protocol: 'http', 
+                        nexusUrl: "${NEXUS_URL}", 
+                        repository: "${NEXUS_RELEASE_REPO}",
+                        groupId: 'com.rkdevblog', 
+                        version: "${readPomVersion.version}",
+                        credentialsId: 'nexus-auth', 
+                        artifacts: [
+                            [
+                                artifactId: "${APP_NAME}", 
+                                classifier: '',
+                                file: "target/${APP_NAME}-${readPomVersion.version}.jar",
+                                type: 'jar'
+                            ]
+                        ]
+                    )
                 }
             }
         }
