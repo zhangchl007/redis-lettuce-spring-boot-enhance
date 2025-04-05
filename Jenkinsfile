@@ -12,6 +12,7 @@ pipeline {
         APP_NAME = 'redisdemo' // Replace with your application name
         IMAGE_REPO = "$REPO_URL/$APP_NAME"
         IMAGE_TAG = "v2${env.BUILD_NUMBER}"
+        NEXUS_RELEASE_REPO = 'redisdemo-release' // Replace with your Nexus release repository
     }
 
     stages {
@@ -45,14 +46,6 @@ pipeline {
             }
         }
 
-       stage('QualityGate'){
-            steps {
-                timeout(time: 1, unit: 'HOURS') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
-
         stage('SonarQube Quality Gate') {
             steps {
                 script {
@@ -67,17 +60,21 @@ pipeline {
         stage('Publish to Nexus') {
             steps {
                 echo 'Publishing to Nexus...'
-                sh """
-                    mvn deploy:deploy-file \\
-                        -DgroupId=com.rkdevblog \\
-                        -DartifactId=${APP_NAME} \\
-                        -Dversion=${env.BUILD_NUMBER} \\
-                        -Dpackaging=jar \\
-                        -Dfile=target/${APP_NAME}-0.0.1-SNAPSHOT.jar \\
-                        -DrepositoryId=nexus-releases \\
-                        -Durl=${NEXUS_URL}
-                """
+                withCredentials([usernamePassword(credentialsId: 'nexus-auth', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
+                    sh """
+                        mvn deploy:deploy-file \\
+                            -DgroupId=com.rkdevblog \\
+                            -DartifactId=${APP_NAME} \\
+                            -Dversion=${env.BUILD_NUMBER} \\
+                            -Dpackaging=jar \\
+                            -Dfile=target/${APP_NAME}-0.0.1-SNAPSHOT.jar \\
+                            -DrepositoryId=${NEXUS_RELEASE_REPO} \\
+                            -Durl=${NEXUS_URL} \\
+                            -Dusername=${NEXUS_USER} \\
+                            -Dpassword=${NEXUS_PASS}
+                    """
                 }
+            }
         }
 
         stage('Build Image with BuildKit') {
