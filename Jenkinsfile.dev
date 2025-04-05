@@ -72,9 +72,10 @@ pipeline {
         stage('Publish to Nexus') {
             steps {
                 echo 'Publishing to Nexus...'
+                // List target directory for debugging
+                sh 'ls -l target'
                 withCredentials([usernamePassword(credentialsId: 'nexus-auth', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
                     sh """
-                        ls -l target
                         mvn deploy:deploy-file \\
                             -DgroupId=com.rkdevblog \\
                             -DartifactId=${APP_NAME} \\
@@ -84,7 +85,8 @@ pipeline {
                             -DrepositoryId=${NEXUS_RELEASE_REPO} \\
                             -Durl=${NEXUS_URL} \\
                             -Dusername=${NEXUS_USER} \\
-                            -Dpassword=${NEXUS_PASS}
+                            -Dpassword=${NEXUS_PASS} \\
+                            -X
                     """
                 }
             }
