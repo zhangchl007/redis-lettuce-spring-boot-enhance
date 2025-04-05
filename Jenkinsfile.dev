@@ -65,7 +65,7 @@ pipeline {
         stage('Build Source Code') {
             steps {
                 echo 'Building Source code...'
-                sh 'mvn package -DskipTests=true'
+                sh 'mvn clean install'
             }
         }
 
