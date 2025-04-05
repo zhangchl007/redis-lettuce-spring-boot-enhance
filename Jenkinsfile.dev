@@ -12,6 +12,7 @@ pipeline {
         APP_NAME = 'redisdemo' // Replace with your application name
         IMAGE_REPO = "$REPO_URL/$APP_NAME"
         IMAGE_TAG = "v2${env.BUILD_NUMBER}"
+        NEXUS_RELEASE_REPO = 'redisdemo-release' // Replace with your Nexus release repository
     }
 
     stages {
@@ -74,7 +75,8 @@ pipeline {
                         -Dversion=${env.BUILD_NUMBER} \\
                         -Dpackaging=jar \\
                         -Dfile=target/${APP_NAME}-0.0.1-SNAPSHOT.jar \\
-                        -DrepositoryId=nexus-releases \\
+                        -DrepositoryId=${NEXUS_RELEASE_REPO} \\
+                        -DcredentialId=${nexus-auth} \\
                         -Durl=${NEXUS_URL}
                 """
                 }
