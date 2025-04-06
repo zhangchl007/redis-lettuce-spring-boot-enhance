@@ -4,8 +4,6 @@ pipeline {
     agent {
         kubernetes {
             label 'jenkins-agent'
-            defaultContainer 'jnlp'
-            containerTemplate(name: 'jnlp', image: 'zhangchl007/jenkins-agent:v1.5', args: '${computer.jnlpmac} ${computer.name}')
         }
     }
     
