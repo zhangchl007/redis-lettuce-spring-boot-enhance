@@ -3,6 +3,8 @@ title: DevSecOps on Azure Kubernetes Service (AKS)
 parent: Module 0 - Introduction and Pre-requisites
 has_children: false
 nav_order: 1
+---
+---
 title: GitOps on Azure Kubernetes Service (AKS)
 parent: Module 1 - Jenkins on Azure Kubernetes Service (AKS)
 has_children: false
