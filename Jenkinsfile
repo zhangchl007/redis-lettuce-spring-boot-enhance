@@ -4,6 +4,7 @@ pipeline {
     agent {
         kubernetes {
             inheritFrom 'default' 
+        }
     }
     
     environment {

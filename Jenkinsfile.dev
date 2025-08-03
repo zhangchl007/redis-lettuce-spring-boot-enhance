@@ -6,7 +6,6 @@ pipeline {
         kubernetes {
             inheritFrom 'default' 
         }
-        }
     }
     
     environment {
