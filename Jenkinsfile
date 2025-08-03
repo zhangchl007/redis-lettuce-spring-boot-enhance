@@ -3,8 +3,7 @@ pipeline {
 
     agent {
         kubernetes {
-            label 'jenkins-agent'
-        }
+            inheritFrom 'default' 
     }
     
     environment {
