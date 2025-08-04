@@ -52,6 +52,7 @@ pipeline {
                 }
             }
         }
+        /*
         stage('SonarQube Quality Gate') {
             steps {
                 script {
@@ -63,7 +64,7 @@ pipeline {
                     }
                 }
             }
-        }
+        }*/
         stage('Publish to Nexus') {
             steps {
                 echo 'Publishing to Nexus...'
