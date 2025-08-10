@@ -86,15 +86,20 @@ public class OTPCacheRepository implements CacheRepository {
     @Override
     public String ping() {
         try {
+            // Defensive: redisTemplate is a required constructor dependency, so it should never be null.
+            // Remove 'redisTemplate == null' from the condition, as it always evaluates to false.
             var factory = redisTemplate.getConnectionFactory();
-            if (factory == null || redisTemplate == null) {
-                throw new OTPServiceException("Redis connection factory or redisTemplate is null");
+            if (factory != null) {
+                var connection = factory.getConnection();
+                if (connection != null) {
+                    return connection.ping();
+                } else {
+                    throw new OTPServiceException("Redis connection is null");
+                }
+            } else {
+                throw new OTPServiceException("Redis connection factory is null");
             }
-            var connection = factory.getConnection();
-            if (connection == null) {
-                throw new OTPServiceException("Redis connection is null");
-            }
-            return connection.ping();
+        
         } catch (RuntimeException e) {
             throw new OTPServiceException("Error while pinging the cache ", e);
         }
