@@ -24,7 +24,7 @@ pipeline {
         stage('Build + Test + Coverage + Sonar') {
             steps {
                 withSonarQubeEnv("${SONARQUBE_ENV}") {
-                    echo 'Running build, tests, coverage and SonarQube analysis...'
+                    echo 'Running build, tests, coverage and SonarQube analysis....'
                     sh '''
                         mvn -B clean verify sonar:sonar \
                           -Dsonar.projectKey=devsecops \
