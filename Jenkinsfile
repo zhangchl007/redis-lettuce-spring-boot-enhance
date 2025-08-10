@@ -21,17 +21,10 @@ pipeline {
     stages {
         stage('Parallel Tasks') {
             parallel {
-                stage('Compile Source Code') {
-                    steps {
-                        echo 'Compiling Source code...'
-                        sh 'mvn compile'
-                    }
-                }
-
                 stage('Unit Test') {
                     steps {
                         echo 'Testing the code...'
-                        sh 'mvn test -DskipTests=true'
+                        sh 'mvn test'
                     }
                 }
 
