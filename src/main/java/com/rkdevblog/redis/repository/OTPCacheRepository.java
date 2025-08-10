@@ -2,6 +2,7 @@ package com.rkdevblog.redis.repository;
 
 import com.rkdevblog.redis.exception.OTPServiceException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.connection.RedisConnectionCommands;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Repository;
@@ -81,9 +82,9 @@ public class OTPCacheRepository implements CacheRepository {
     @Override
     public String ping() {
         try {
-            // Explicit cast to RedisCallback<String> removes compile-time ambiguity.
-            String result = redisTemplate.execute((org.springframework.data.redis.core.RedisCallback<String>)
-                    connection -> connection.ping());
+            String result = redisTemplate.execute(
+                (org.springframework.data.redis.core.RedisCallback<String>) RedisConnectionCommands::ping
+            );
 
             if (result == null) {
                 throw new OTPServiceException("Received null ping response from Redis");
