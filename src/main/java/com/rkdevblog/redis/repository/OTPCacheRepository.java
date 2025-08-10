@@ -87,8 +87,8 @@ public class OTPCacheRepository implements CacheRepository {
     public String ping() {
         try {
             var factory = redisTemplate.getConnectionFactory();
-            if (factory == null) {
-                throw new OTPServiceException("Redis connection factory is null");
+            if (factory == null || redisTemplate == null) {
+                throw new OTPServiceException("Redis connection factory or redisTemplate is null");
             }
             var connection = factory.getConnection();
             if (connection == null) {
