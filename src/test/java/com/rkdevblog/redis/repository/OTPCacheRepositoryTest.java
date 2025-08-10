@@ -13,9 +13,6 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-// filepath: /home/zhangchl007/azure/aks/gitops/argocd-practice/redis-lettuce-spring-boot-enhance/src/test/java/com/rkdevblog/redis/repository/OTPCacheRepositoryTest.java
-
-
 
 
 class OTPCacheRepositoryTest {
