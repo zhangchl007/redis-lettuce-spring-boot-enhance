@@ -22,17 +22,17 @@ pipeline {
     stages {
         stage('Parallel Build & Test') {
             parallel {
-                stage('Unit Test') {
+                stage('Build & Test with Coverage') {
                     steps {
-                        echo 'Testing the code...'
-                        sh 'mvn test'
+                        echo 'Compile, run tests with coverage...'
+                        sh 'mvn -B clean test jacoco:report'
                     }
                 }
                 stage('SonarQube Analysis') {
                     steps {
                         withSonarQubeEnv("${SONARQUBE_ENV}") {
-                            echo 'Running SonarQube Analysis......'
-                            sh 'mvn sonar:sonar -Dsonar.projectKey=devsecops -Dsonar.projectName=devsecops -Dsonar.host.url=http://sonarqube-sonarqube.devops.svc.cluster.local:9000 -Dsonar.token=${SONAR_TOKEN} -Dsonar.sources=src/main/java -Dsonar.java.binaries=target/classes'
+                            echo 'Running SonarQube Analysis...'
+                            sh 'mvn -B sonar:sonar -Dsonar.projectKey=devsecops -Dsonar.projectName=devsecops -Dsonar.host.url=http://sonarqube-sonarqube.devops.svc.cluster.local:9000 -Dsonar.token=${SONAR_TOKEN} -Dsonar.sources=src/main/java -Dsonar.java.binaries=target/classes -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml'
                         }
                     }
                 }
