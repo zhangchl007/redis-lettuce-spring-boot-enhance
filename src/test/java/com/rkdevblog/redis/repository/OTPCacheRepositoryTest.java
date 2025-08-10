@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import java.util.Optional;
@@ -35,6 +36,12 @@ class OTPCacheRepositoryTest {
         when(redisTemplate.opsForValue()).thenReturn(valueOps);
         when(redisTemplate.getConnectionFactory()).thenReturn(connectionFactory);
         when(connectionFactory.getConnection()).thenReturn(connection);
+
+        // Stub execute() to invoke the callback with our mocked connection (new ping implementation path)
+        when(redisTemplate.execute(any(RedisCallback.class))).thenAnswer(inv -> {
+            RedisCallback<Object> cb = (RedisCallback<Object>) inv.getArgument(0);
+            return cb.doInRedis(connection);
+        });
 
         repository = new OTPCacheRepository(redisTemplate, ttl);
     }
@@ -99,6 +106,9 @@ class OTPCacheRepositoryTest {
         String r = repository.ping();
         assertEquals("PONG", r);
         verify(connection).ping();
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<RedisCallback<Object>> callbackCaptor = ArgumentCaptor.forClass(RedisCallback.class);
+        verify(redisTemplate).execute(callbackCaptor.capture());
     }
 
     @Test

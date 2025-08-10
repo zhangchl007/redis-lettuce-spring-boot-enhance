@@ -1,7 +1,6 @@
 package com.rkdevblog.redis.repository;
 
 import com.rkdevblog.redis.exception.OTPServiceException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
@@ -11,29 +10,22 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Implementation of {@link )
+ * Implementation of {@link CacheRepository}
  */
 @Repository
 public class OTPCacheRepository implements CacheRepository {
 
-    private long ttl;
-    private StringRedisTemplate redisTemplate;
-    private ValueOperations<String, String> valueOps;
+    private final long ttl;
+    private final StringRedisTemplate redisTemplate;
+    private final ValueOperations<String, String> valueOps;
 
-    @Autowired
     public OTPCacheRepository(StringRedisTemplate redisTemplate,
                               @Value("${spring.redis.timeToLive}") long ttl) {
         this.redisTemplate = redisTemplate;
-        valueOps = redisTemplate.opsForValue();
+        this.valueOps = redisTemplate.opsForValue();
         this.ttl = ttl;
     }
 
-    /**
-     * Save the key value pair in cache with a ttl
-     *
-     * @param key   cache key
-     * @param value cache value
-     */
     @Override
     public void put(String key, Integer value) {
         try {
@@ -44,31 +36,19 @@ public class OTPCacheRepository implements CacheRepository {
         }
     }
 
-    /**
-     * Returns the cached value
-     *
-     * @param key cached key
-     * @return cached value
-     */
     @Override
     public Optional<String> get(String key) {
         try {
-            Boolean b = redisTemplate.hasKey(key);
-            if (Boolean.TRUE.equals(b)) {
+            Boolean exists = redisTemplate.hasKey(key);
+            if (Boolean.TRUE.equals(exists)) {
                 return Optional.ofNullable(valueOps.get(key));
-            } else {
-                return Optional.empty();
             }
+            return Optional.empty();
         } catch (RuntimeException e) {
             throw new OTPServiceException("Error while retrieving from the cache ", e);
         }
     }
 
-    /**
-     * Remove the cached value
-     *
-     * @param key cached key
-     */
     @Override
     public void remove(String key) {
         try {
@@ -77,25 +57,38 @@ public class OTPCacheRepository implements CacheRepository {
             throw new OTPServiceException("Error while removing from the cache ", e);
         }
     }
-    
+
     /**
-     * Ping the cache to check the connection.
+     * Sonar issue (always true/false condition) deep dive:
      *
-     * @return result of ping command from Redis
+     * Previous code:
+     *   var factory = redisTemplate.getConnectionFactory();
+     *   if (factory == null) { ... }
+     *   var connection = factory.getConnection();
+     *   if (connection != null) return connection.ping();
+     *   throw ...
+     *
+     * In normal Spring Data Redis usage redisTemplate is constructed with a non-null
+     * connection factory. getConnectionFactory() will not return null after bean
+     * initialization. Also LettuceConnectionFactory#getConnection() never returns null.
+     * Sonar flags these null checks as always false/true (dead code) -> code smell.
+     *
+     * Resolution:
+     * - Remove redundant null checks.
+     * - Use the template callback API which handles resource acquisition/release.
+     * - Wrap any RuntimeException in OTPServiceException.
      */
     @Override
     public String ping() {
         try {
-            var factory = redisTemplate.getConnectionFactory();
-            if (factory == null) {
-                throw new OTPServiceException("Redis connection factory is null");
+            // Explicit cast to RedisCallback<String> removes compile-time ambiguity.
+            String result = redisTemplate.execute((org.springframework.data.redis.core.RedisCallback<String>)
+                    connection -> connection.ping());
+
+            if (result == null) {
+                throw new OTPServiceException("Received null ping response from Redis");
             }
-            var connection = factory.getConnection();
-            // Defensive: connection can be null if Redis is unavailable.
-            if (connection != null) {
-                return connection.ping();
-            }
-            throw new OTPServiceException("Redis connection is null");
+            return result;
         } catch (RuntimeException e) {
             throw new OTPServiceException("Error while pinging the cache ", e);
         }
