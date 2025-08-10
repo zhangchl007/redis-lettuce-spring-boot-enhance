@@ -22,7 +22,7 @@ class OTPCacheRepositoryTest {
     private RedisConnectionFactory connectionFactory;
     private RedisConnection connection;
     private OTPCacheRepository repository;
-    private final long TTL = 120L;
+    private final long ttl = 120L;
 
     @SuppressWarnings("unchecked")
     @BeforeEach
@@ -36,14 +36,14 @@ class OTPCacheRepositoryTest {
         when(redisTemplate.getConnectionFactory()).thenReturn(connectionFactory);
         when(connectionFactory.getConnection()).thenReturn(connection);
 
-        repository = new OTPCacheRepository(redisTemplate, TTL);
+        repository = new OTPCacheRepository(redisTemplate, ttl);
     }
 
     @Test
     void put_success_storesValue_and_setsExpire() {
         repository.put("k1", 123456);
         verify(valueOps).set("k1", "123456");
-        verify(redisTemplate).expire("k1", TTL, TimeUnit.SECONDS);
+        verify(redisTemplate).expire("k1", ttl, TimeUnit.SECONDS);
     }
 
     @Test
