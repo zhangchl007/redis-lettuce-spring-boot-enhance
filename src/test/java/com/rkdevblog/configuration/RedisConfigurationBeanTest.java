@@ -19,33 +19,16 @@ import static org.mockito.Mockito.mock;
 
 class RedisConfigurationBeanTest {
 
-    // Fallback reflective field fetch
-    private Object reflectField(Object target, String... candidateNames) {
-        for (String name : candidateNames) {
-            Class<?> c = target.getClass();
-            while (c != null) {
-                try {
-                    Field f = c.getDeclaredField(name);
-                    f.setAccessible(true);
-                    return f.get(target);
-                } catch (NoSuchFieldException e) {
-                    c = c.getSuperclass();
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-        return null;
-    }
+    // Removed reflectField and direct field access; rely on public API or public getters.
 
     private RedisStandaloneConfiguration standaloneConfig(LettuceConnectionFactory f) {
         try {
             Method m = LettuceConnectionFactory.class.getMethod("getStandaloneConfiguration");
             return (RedisStandaloneConfiguration) m.invoke(f);
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ignored) {
+            // If the method is not available, consider adding a public getter in the production code.
+            throw new UnsupportedOperationException("Cannot access standalone configuration. Please provide a public getter in the production code.");
         }
-        Object val = reflectField(f, "standaloneConfig");
-        return (RedisStandaloneConfiguration) val;
     }
 
     private RedisClusterConfiguration clusterConfig(LettuceConnectionFactory f) {
@@ -53,9 +36,9 @@ class RedisConfigurationBeanTest {
             Method m = LettuceConnectionFactory.class.getMethod("getClusterConfiguration");
             return (RedisClusterConfiguration) m.invoke(f);
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ignored) {
+            // If the method is not available, consider adding a public getter in the production code.
+            throw new UnsupportedOperationException("Cannot access cluster configuration. Please provide a public getter in the production code.");
         }
-        Object val = reflectField(f, "clusterConfiguration", "configuration"); // legacy names
-        return (RedisClusterConfiguration) val;
     }
 
     @Test
