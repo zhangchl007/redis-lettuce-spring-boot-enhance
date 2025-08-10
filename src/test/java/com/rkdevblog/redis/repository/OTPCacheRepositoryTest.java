@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import java.util.Optional;
@@ -22,7 +23,7 @@ class OTPCacheRepositoryTest {
     private RedisConnectionFactory connectionFactory;
     private RedisConnection connection;
     private OTPCacheRepository repository;
-    private final long TTL = 120L;
+    private final long ttl = 120L;
 
     @SuppressWarnings("unchecked")
     @BeforeEach
@@ -36,14 +37,20 @@ class OTPCacheRepositoryTest {
         when(redisTemplate.getConnectionFactory()).thenReturn(connectionFactory);
         when(connectionFactory.getConnection()).thenReturn(connection);
 
-        repository = new OTPCacheRepository(redisTemplate, TTL);
+        // Stub execute() to invoke the callback with our mocked connection (new ping implementation path)
+        when(redisTemplate.execute(any(RedisCallback.class))).thenAnswer(inv -> {
+            RedisCallback<Object> cb = (RedisCallback<Object>) inv.getArgument(0);
+            return cb.doInRedis(connection);
+        });
+
+        repository = new OTPCacheRepository(redisTemplate, ttl);
     }
 
     @Test
     void put_success_storesValue_and_setsExpire() {
         repository.put("k1", 123456);
         verify(valueOps).set("k1", "123456");
-        verify(redisTemplate).expire("k1", TTL, TimeUnit.SECONDS);
+        verify(redisTemplate).expire("k1", ttl, TimeUnit.SECONDS);
     }
 
     @Test
@@ -99,6 +106,9 @@ class OTPCacheRepositoryTest {
         String r = repository.ping();
         assertEquals("PONG", r);
         verify(connection).ping();
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<RedisCallback<Object>> callbackCaptor = ArgumentCaptor.forClass(RedisCallback.class);
+        verify(redisTemplate).execute(callbackCaptor.capture());
     }
 
     @Test
