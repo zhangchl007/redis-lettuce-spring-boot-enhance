@@ -19,43 +19,37 @@ pipeline {
     }
 
     stages {
-        stage('Parallel Tasks') {
-            parallel {
-                stage('Build & Test with Coverage') {
-                    steps {
-                        echo 'Compile, run tests with coverage...'
-                        sh 'mvn -B clean test jacoco:report'
-                    }
-                }
-                stage('SonarQube Analysis') {
-                    steps {
-                        withSonarQubeEnv("${SONARQUBE_ENV}") {
-                            echo 'Running SonarQube Analysis...'
-                            sh 'mvn -B sonar:sonar -Dsonar.projectKey=devsecops -Dsonar.projectName=devsecops -Dsonar.host.url=http://sonarqube-sonarqube.devops.svc.cluster.local:9000 -Dsonar.token=${SONAR_TOKEN} -Dsonar.sources=src/main/java -Dsonar.java.binaries=target/classes -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml'
-                        }
-                    }
-                }                
-                stage('Build Source Code') {
-                    steps {
-                        echo 'Building Source code...'
-                        sh 'mvn clean install'
-                    }
+        
+        stage('Build + Test + Coverage + Sonar') {
+            steps {
+                withSonarQubeEnv("${SONARQUBE_ENV}") {
+                    echo 'Running build, tests, coverage and SonarQube analysis...'
+                    sh '''
+                        mvn -B clean verify sonar:sonar \
+                          -Dsonar.projectKey=devsecops \
+                          -Dsonar.projectName=devsecops \
+                          -Dsonar.host.url=http://sonarqube-sonarqube.devops.svc.cluster.local:9000 \
+                          -Dsonar.token=${SONAR_TOKEN} \
+                          -Dsonar.java.binaries=target/classes \
+                          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                    '''
                 }
             }
         }
-        /*
-        stage('SonarQube Quality Gate') {
+
+        stage('Quality Gate') {
             steps {
                 script {
                     timeout(time: 10, unit: 'MINUTES') {
                         def qg = waitForQualityGate()
                         if (qg.status != 'OK') {
-                            error "Pipeline aborted due to SonarQube quality gate failure: ${qg.status}"
+                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
                         }
                     }
                 }
             }
-        }*/
+        }
+
         stage('Publish to Nexus') {
             steps {
                 echo 'Publishing to Nexus...'
