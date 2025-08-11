@@ -6,18 +6,6 @@ import java.io.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-// Create a simple OtpRequest class for testing
-class OtpRequest implements Serializable {
-    private String email;
-    
-    public String getEmail() {
-        return email;
-    }
-    
-    public void setEmail(String email) {
-        this.email = email;
-    }
-}
 
 class OtpRequestTest {
 

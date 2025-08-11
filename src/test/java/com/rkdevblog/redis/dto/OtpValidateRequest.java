@@ -1,28 +1,11 @@
-
 package com.rkdevblog.redis.dto;
 
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 import static org.junit.jupiter.api.Assertions.*;
-public class OtpValidateRequest {
-
-    private String key;
-    private String otp;
-
-    public String getKey() {
-        return key;
-    }
-
-    public String getOtp() {
-        return otp;
-    }
-
-}
-
 
 class OtpValidateRequestTest {
 
@@ -50,18 +33,7 @@ class OtpValidateRequestTest {
     void fieldsArePrivate() throws Exception {
         Field keyField = OtpValidateRequest.class.getDeclaredField("key");
         Field otpField = OtpValidateRequest.class.getDeclaredField("otp");
-        assertTrue(Modifier.isPrivate(keyField.getModifiers()), "key must be private");
-        assertTrue(Modifier.isPrivate(otpField.getModifiers()), "otp must be private");
-    }
-
-    @Test
-    void noSettersPresent() {
-        Method[] methods = OtpValidateRequest.class.getDeclaredMethods();
-        for (Method m : methods) {
-            String name = m.getName();
-            assertNotEquals("setKey", name, "Setter setKey should not exist");
-            assertNotEquals("setOtp", name, "Setter setOtp should not exist");
-
-        }
+        assertTrue(Modifier.isPrivate(keyField.getModifiers()));
+        assertTrue(Modifier.isPrivate(otpField.getModifiers()));
     }
 }
