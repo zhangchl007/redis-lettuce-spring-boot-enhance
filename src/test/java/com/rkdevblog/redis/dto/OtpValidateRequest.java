@@ -1,8 +1,5 @@
-// Pseudocode:
-// - Fix package to com.rkdevblog.redis.ota to match directory and resolve mismatch.
-// - Keep tests identical.
 
-package com.rkdevblog.redis.ota;
+package com.rkdevblog.redis.dto;
 
 import org.junit.jupiter.api.Test;
 
@@ -30,26 +27,23 @@ public class OtpValidateRequest {
 class OtpValidateRequestTest {
 
     @Test
-    void defaultValues_null() {
-        OtpValidateRequest req = new OtpValidateRequest();
-        assertNull(req.getKey(), "key should be null by default");
-        assertNull(req.getOtp(), "otp should be null by default");
+    void defaults_areNull() {
+        OtpValidateRequest v = new OtpValidateRequest();
+        assertNull(v.getKey());
+        assertNull(v.getOtp());
     }
 
     @Test
-    void reflectiveSetFields_gettersReturnValues() throws Exception {
-        OtpValidateRequest req = new OtpValidateRequest();
-
-        Field keyField = OtpValidateRequest.class.getDeclaredField("key");
-        keyField.setAccessible(true);
-        keyField.set(req, "user@example.com");
-
-        Field otpField = OtpValidateRequest.class.getDeclaredField("otp");
-        otpField.setAccessible(true);
-        otpField.set(req, "123456");
-
-        assertEquals("user@example.com", req.getKey());
-        assertEquals("123456", req.getOtp());
+    void reflection_canPopulateFields_gettersReturnValues() throws Exception {
+        OtpValidateRequest v = new OtpValidateRequest();
+        Field key = OtpValidateRequest.class.getDeclaredField("key");
+        Field otp = OtpValidateRequest.class.getDeclaredField("otp");
+        key.setAccessible(true);
+        otp.setAccessible(true);
+        key.set(v, "user@example.com");
+        otp.set(v, "123456");
+        assertEquals("user@example.com", v.getKey());
+        assertEquals("123456", v.getOtp());
     }
 
     @Test
@@ -62,7 +56,7 @@ class OtpValidateRequestTest {
 
     @Test
     void noSettersPresent() {
-        Method[] methods = OtpValidateRequest.class.getMethods();
+        Method[] methods = OtpValidateRequest.class.getDeclaredMethods();
         for (Method m : methods) {
             String name = m.getName();
             assertNotEquals("setKey", name, "Setter setKey should not exist");
