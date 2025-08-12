@@ -53,7 +53,7 @@ pipeline {
 
         stage('Publish to Nexus') {
             steps {
-                echo 'Publishing to Nexus...'
+                echo 'Publishing to Nexus....'
                 script {
                     def readPomVersion = readMavenPom file: 'pom.xml'
                     nexusArtifactUploader(
